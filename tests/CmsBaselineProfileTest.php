@@ -57,7 +57,7 @@ final class CmsBaselineProfileTest extends TestCase
         );
     }
 
-    public function test_current_openssl_cms_does_not_include_signing_certificate_v2_yet(): void
+    public function test_current_pdf_signature_includes_signing_certificate_v2(): void
     {
         $pdf = file_get_contents(
             __DIR__ . '/Output/debug-signed.pdf'
@@ -70,7 +70,7 @@ final class CmsBaselineProfileTest extends TestCase
 
         $profile = new CmsBaselineProfile();
 
-        $this->assertFalse(
+        $this->assertTrue(
             $profile->hasSigningCertificateV2Oid($cms)
         );
     }

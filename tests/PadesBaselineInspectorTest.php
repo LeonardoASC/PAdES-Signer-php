@@ -28,11 +28,11 @@ final class PadesBaselineInspectorTest extends TestCase
             $inspection['is_cms_signed_data']
         );
 
-        $this->assertFalse(
+        $this->assertTrue(
             $inspection['has_signing_certificate_v2']
         );
 
-        $this->assertFalse(
+        $this->assertTrue(
             $inspection['is_pades_b_b_ready']
         );
     }

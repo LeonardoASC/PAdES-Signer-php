@@ -90,4 +90,12 @@ final readonly class PfxCertificate
 
         return $certificates;
     }
+    public function getSerialNumberHex(): string
+    {
+        $info = $this->getInfo();
+
+        return strtoupper(
+            $info['serialNumberHex'] ?? dechex((int) ($info['serialNumber'] ?? 0))
+        );
+    }
 }
