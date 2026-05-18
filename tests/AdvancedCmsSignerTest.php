@@ -68,4 +68,30 @@ final class AdvancedCmsSignerTest extends TestCase
             $cms
         );
     }
+
+    public function test_advanced_cms_is_pades_b_b_ready_by_internal_inspection(): void
+    {
+        $certificate = new PfxCertificate(
+            path: __DIR__ . '/Fixtures/certificate.pfx',
+            password: '123456'
+        );
+
+        $cms = (new AdvancedCmsSigner($certificate))
+            ->signDetachedDer('hello world');
+
+        $inspection = (new \NihilLabs\Pades\Crypto\PadesBaselineInspector())
+            ->inspect($cms);
+
+        $this->assertTrue(
+            $inspection['is_cms_signed_data']
+        );
+
+        $this->assertTrue(
+            $inspection['has_signing_certificate_v2']
+        );
+
+        $this->assertTrue(
+            $inspection['is_pades_b_b_ready']
+        );
+    }
 }
