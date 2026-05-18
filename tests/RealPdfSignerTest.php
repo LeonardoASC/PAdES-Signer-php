@@ -30,5 +30,40 @@ final class RealPdfSignerTest extends TestCase
         $this->assertStringContainsString('%PDF-', $content);
         $this->assertStringContainsString('xref', $content);
         $this->assertStringContainsString('trailer', $content);
+        $this->assertStringContainsString('/Prev ', $content);
+
+        $this->assertStringContainsString('/Type /Sig', $content);
+        $this->assertStringContainsString('/Filter /Adobe.PPKLite', $content);
+        $this->assertStringContainsString('/SubFilter /adbe.pkcs7.detached', $content);
+        $this->assertStringContainsString('/Contents <', $content);
+        $this->assertStringContainsString('/ByteRange [**********', $content);
+    }
+
+    public function test_it_fills_signature_placeholders_when_certificate_is_provided(): void
+    {
+        $input = __DIR__ . '/Output/minimal.pdf';
+        $output = __DIR__ . '/Output/minimal-real-signed.pdf';
+
+        if (! is_dir(dirname($input))) {
+            mkdir(dirname($input), 0777, true);
+        }
+
+        (new MinimalPdfGenerator())->generate($input);
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
+            certificatePassword: '123456'
+        );
+
+        $this->assertFileExists($output);
+
+        $content = file_get_contents($output);
+
+        $this->assertStringContainsString('/Type /Sig', $content);
+        $this->assertStringContainsString('/ByteRange [0 ', $content);
+        $this->assertStringNotContainsString('/ByteRange [**********', $content);
+        $this->assertStringContainsString('/Contents <3082', $content);
     }
 }
