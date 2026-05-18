@@ -1,0 +1,28 @@
+{
+    "name": "nihillabs/pades-core",
+    "description": "PAdES digital signature engine for PHP",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "NihilLabs\\Pades\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Leonardo Chaves",
+            "email": "contato@nihillabs.com.br"
+        }
+    ],
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "require": {
+        "php": "^8.4",
+        "ext-openssl": "*",
+        "phpseclib/phpseclib": "^3.0",
+        "setasign/fpdi": "^2.6"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.1"
+    }
+}
