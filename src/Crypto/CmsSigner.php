@@ -7,7 +7,7 @@ namespace NihilLabs\Pades\Crypto;
 use NihilLabs\Pades\Certificate\PfxCertificate;
 use RuntimeException;
 
-final readonly class CmsSigner
+final readonly class CmsSigner implements CmsSignerInterface
 {
     public function __construct(
         private PfxCertificate $certificate
@@ -52,6 +52,7 @@ final readonly class CmsSigner
         return $signed;
     }
 
+
     public function signDetachedDer(string $data): string
     {
         $smime = $this->signDetached($data);
@@ -78,4 +79,5 @@ final readonly class CmsSigner
 
         return $der;
     }
+
 }

@@ -14,7 +14,7 @@ final class AdvancedCmsSignerTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
 
-        (new AdvancedCmsSigner())->sign(
+        (new AdvancedCmsSigner())->signDetachedDer(
             'test',
             'cert.pfx',
             '123'

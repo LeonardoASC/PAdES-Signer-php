@@ -8,10 +8,8 @@ use RuntimeException;
 
 final readonly class AdvancedCmsSigner implements CmsSignerInterface
 {
-    public function sign(
-        string $data,
-        string $certificatePath,
-        string $certificatePassword
+    public function signDetachedDer(
+        string $data
     ): string {
         throw new RuntimeException(
             'Advanced CMS signer ainda não implementado.'
