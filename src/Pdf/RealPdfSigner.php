@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use RuntimeException;
 use NihilLabs\Pades\Certificate\PfxCertificate;
 use NihilLabs\Pades\Crypto\CmsSigner;
+use NihilLabs\Pades\Crypto\AdvancedCmsSigner;
 
 final readonly class RealPdfSigner
 {
@@ -155,8 +156,11 @@ final readonly class RealPdfSigner
             password: $certificatePassword
         );
 
-        $cms = (new CmsSigner($certificate))
-            ->signDetachedDer($signedData);
+        $cms = (new AdvancedCmsSigner(
+            $certificate
+        ))->signDetachedDer(
+            $signedData
+        );
 
         $hexSignature = (new PdfSignatureContents())
             ->encode($cms);

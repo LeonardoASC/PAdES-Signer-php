@@ -86,4 +86,39 @@ final class RealPdfSignerTest extends TestCase
             $content
         );
     }
+    public function test_real_pdf_signer_generates_pades_b_b_ready_cms(): void
+    {
+        $input = __DIR__ . '/Output/pades-bb-input.pdf';
+
+        $output = __DIR__ . '/Output/pades-bb-output.pdf';
+
+        (new \NihilLabs\Pades\Pdf\MinimalPdfGenerator())
+            ->generate($input);
+
+        (new \NihilLabs\Pades\Pdf\RealPdfSigner())
+            ->sign(
+                inputPdf: $input,
+                outputPdf: $output,
+                certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
+                certificatePassword: '123456'
+            );
+
+        $pdf = file_get_contents($output);
+
+        $this->assertNotFalse($pdf);
+
+        $cms = (new \NihilLabs\Pades\Pdf\PdfSignatureExtractor())
+            ->extractBinarySignatureWithoutPadding($pdf);
+
+        $inspection = (new \NihilLabs\Pades\Crypto\PadesBaselineInspector())
+            ->inspect($cms);
+
+        $this->assertTrue(
+            $inspection['has_signing_certificate_v2']
+        );
+
+        $this->assertTrue(
+            $inspection['is_pades_b_b_ready']
+        );
+    }
 }
