@@ -8,7 +8,6 @@ use NihilLabs\Pades\Certificate\PfxCertificate;
 use NihilLabs\Pades\Crypto\AdvancedCmsSigner;
 use NihilLabs\Pades\Crypto\CmsSignerInterface;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 
 final class AdvancedCmsSignerTest extends TestCase
 {
@@ -42,16 +41,31 @@ final class AdvancedCmsSignerTest extends TestCase
         );
     }
 
-    public function test_it_is_not_implemented_yet(): void
+    public function test_it_generates_advanced_cms_der(): void
     {
         $certificate = new PfxCertificate(
             path: __DIR__ . '/Fixtures/certificate.pfx',
             password: '123456'
         );
 
-        $this->expectException(RuntimeException::class);
+        $cms = (new AdvancedCmsSigner($certificate))
+            ->signDetachedDer('hello world');
 
-        (new AdvancedCmsSigner($certificate))
-            ->signDetachedDer('test');
+        $this->assertNotEmpty($cms);
+
+        $this->assertStringStartsWith(
+            "\x30",
+            $cms
+        );
+
+        $this->assertStringContainsString(
+            hex2bin('2a864886f70d010702'),
+            $cms
+        );
+
+        $this->assertStringContainsString(
+            hex2bin('2a864886f70d010910022f'),
+            $cms
+        );
     }
 }
