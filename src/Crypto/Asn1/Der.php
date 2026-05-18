@@ -54,4 +54,32 @@ final readonly class Der
     {
         return "\x17" . self::length(strlen($time)) . $time;
     }
+
+    public static function integer(int $value): string
+    {
+        if ($value === 0) {
+            return "\x02\x01\x00";
+        }
+
+        $hex = dechex($value);
+
+        if (strlen($hex) % 2 !== 0) {
+            $hex = '0' . $hex;
+        }
+
+        $bytes = hex2bin($hex);
+
+        if ($bytes !== false && (ord($bytes[0]) & 0x80)) {
+            $bytes = "\x00" . $bytes;
+        }
+
+        return "\x02" . self::length(strlen($bytes)) . $bytes;
+    }
+
+    public static function contextSpecificConstructed(
+        int $tag,
+        string $content
+    ): string {
+        return chr(0xA0 + $tag) . self::length(strlen($content)) . $content;
+    }
 }
