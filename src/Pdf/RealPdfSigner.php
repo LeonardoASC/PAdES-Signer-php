@@ -27,14 +27,49 @@ final readonly class RealPdfSigner
             throw new InvalidArgumentException('Arquivo de entrada não é um PDF válido.');
         }
 
-        $nextObjectNumber = (new PdfObjectInspector())
+        $objectInspector = new PdfObjectInspector();
+
+        $nextObjectNumber = $objectInspector
             ->getNextObjectNumber($content);
 
+        $signatureObjectNumber = $nextObjectNumber;
+        $widgetObjectNumber = $nextObjectNumber + 1;
+        $acroFormObjectNumber = $nextObjectNumber + 2;
+
+        $catalogInspector = new PdfCatalogInspector();
+
+        $catalogNumber = $catalogInspector
+            ->getCatalogObjectNumber($content);
+
+        $catalogBody = $catalogInspector
+            ->getCatalogObjectBody($content);
+
+        $updatedCatalog = (new PdfCatalogUpdater())
+            ->addAcroForm(
+                catalogBody: $catalogBody,
+                acroFormObjectNumber: $acroFormObjectNumber
+            );
+
+        $objects = [
+            $signatureObjectNumber => $this->signatureObject(),
+
+            $widgetObjectNumber => (new PdfSignatureWidget())
+                ->build(
+                    signatureObjectNumber: $signatureObjectNumber
+                ),
+
+            $acroFormObjectNumber => (new PdfAcroForm())
+                ->build(
+                    widgetObjectNumber: $widgetObjectNumber
+                ),
+
+            $catalogNumber => $updatedCatalog,
+        ];
+
         $updated = (new IncrementalPdfWriter())
-            ->appendObject(
+            ->appendObjects(
                 pdfContent: $content,
-                objectNumber: $nextObjectNumber,
-                objectBody: $this->signatureObject()
+                objects: $objects
             );
 
         if ($certificatePath !== null && $certificatePassword !== null) {

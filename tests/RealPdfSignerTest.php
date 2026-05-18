@@ -65,5 +65,13 @@ final class RealPdfSignerTest extends TestCase
         $this->assertStringContainsString('/ByteRange [0 ', $content);
         $this->assertStringNotContainsString('/ByteRange [**********', $content);
         $this->assertStringContainsString('/Contents <3082', $content);
+
+        $this->assertStringContainsString('/Subtype /Widget', $content);
+
+        $this->assertStringContainsString('/FT /Sig', $content);
+
+        $this->assertStringContainsString('/Fields [', $content);
+
+        $this->assertStringContainsString('/AcroForm ', $content);
     }
 }
