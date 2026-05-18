@@ -16,43 +16,25 @@ final readonly class SignerInfoBuilder
     ): string {
         return Der::sequence(
             Der::integer(1)
-            . $this->sid($certificate)
-            . $this->digestAlgorithm()
-            . Der::contextSpecificConstructed(0, $signedAttributes)
-            . $this->signatureAlgorithm()
-            . Der::octetString($encryptedDigest)
+                . $this->sid($certificate)
+                . $this->digestAlgorithm()
+                . Der::contextSpecificConstructed(0, $signedAttributes)
+                . $this->signatureAlgorithm()
+                . Der::octetString($encryptedDigest)
         );
     }
 
     private function sid(PfxCertificate $certificate): string
     {
-        $info = $certificate->getInfo();
-
-        $serial = (int) ($info['serialNumber'] ?? 1);
-
-        return Der::sequence(
-            $this->issuerNamePlaceholder()
-            . Der::integer($serial)
-        );
-    }
-
-    private function issuerNamePlaceholder(): string
-    {
-        return Der::sequence(
-            Der::set(
-                Der::sequence(
-                    Der::oid('550403')
-                    . Der::octetString('Unknown Issuer')
-                )
-            )
-        );
+        return (new IssuerAndSerialNumber())
+            ->build($certificate);
     }
 
     private function digestAlgorithm(): string
     {
         return Der::sequence(
             Der::oid('608648016503040201')
-            . Der::null()
+                . Der::null()
         );
     }
 
@@ -60,7 +42,7 @@ final readonly class SignerInfoBuilder
     {
         return Der::sequence(
             Der::oid('2a864886f70d010101')
-            . Der::null()
+                . Der::null()
         );
     }
 }
