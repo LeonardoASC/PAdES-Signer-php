@@ -82,4 +82,11 @@ final readonly class Der
     ): string {
         return chr(0xA0 + $tag) . self::length(strlen($content)) . $content;
     }
+
+    public static function contextSpecificImplicit(
+        int $tag,
+        string $content
+    ): string {
+        return chr(0x80 + $tag) . self::length(strlen($content)) . $content;
+    }
 }
