@@ -77,4 +77,42 @@ final class SignedAttributesBuilderTest extends TestCase
             $attributes
         );
     }
+
+    public function test_it_contains_content_type_oid(): void
+    {
+        $certificate = new PfxCertificate(
+            path: __DIR__ . '/Fixtures/certificate.pfx',
+            password: '123456'
+        );
+
+        $attributes = (new SignedAttributesBuilder())
+            ->build(
+                data: 'hello world',
+                certificatePem: $certificate->getPublicCertificate()
+            );
+
+        $this->assertStringContainsString(
+            hex2bin('2a864886f70d010903'),
+            $attributes
+        );
+    }
+
+    public function test_it_contains_signing_time_oid(): void
+    {
+        $certificate = new PfxCertificate(
+            path: __DIR__ . '/Fixtures/certificate.pfx',
+            password: '123456'
+        );
+
+        $attributes = (new SignedAttributesBuilder())
+            ->build(
+                data: 'hello world',
+                certificatePem: $certificate->getPublicCertificate()
+            );
+
+        $this->assertStringContainsString(
+            hex2bin('2a864886f70d010905'),
+            $attributes
+        );
+    }
 }

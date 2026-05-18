@@ -44,4 +44,14 @@ final readonly class Der
 
         return "\x06" . self::length(strlen($body)) . $body;
     }
+
+    public static function null(): string
+    {
+        return "\x05\x00";
+    }
+
+    public static function utcTime(string $time): string
+    {
+        return "\x17" . self::length(strlen($time)) . $time;
+    }
 }

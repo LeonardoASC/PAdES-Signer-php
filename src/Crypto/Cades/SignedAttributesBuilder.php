@@ -12,38 +12,42 @@ final readonly class SignedAttributesBuilder
         string $data,
         string $certificatePem
     ): string {
-        $messageDigest = $this->messageDigestAttribute(
-            $data
-        );
-
-        $signingCertificateV2 = (
-            new SigningCertificateV2()
-        )->attribute(
-            $certificatePem
-        );
-
         return Der::set(
-            $messageDigest
-            . $signingCertificateV2
+            $this->contentTypeAttribute()
+            . $this->signingTimeAttribute()
+            . $this->messageDigestAttribute($data)
+            . (new SigningCertificateV2())->attribute($certificatePem)
+        );
+    }
+
+    private function contentTypeAttribute(): string
+    {
+        return Der::sequence(
+            Der::oid('2a864886f70d010903')
+            . Der::set(
+                Der::oid('2a864886f70d010701')
+            )
+        );
+    }
+
+    private function signingTimeAttribute(): string
+    {
+        return Der::sequence(
+            Der::oid('2a864886f70d010905')
+            . Der::set(
+                Der::utcTime(gmdate('ymdHis') . 'Z')
+            )
         );
     }
 
     private function messageDigestAttribute(
         string $data
     ): string {
-        $digest = hash(
-            'sha256',
-            $data,
-            binary: true
-        );
-
         return Der::sequence(
-            Der::oid(
-                '2a864886f70d010904'
-            )
+            Der::oid('2a864886f70d010904')
             . Der::set(
                 Der::octetString(
-                    $digest
+                    hash('sha256', $data, binary: true)
                 )
             )
         );
