@@ -37,4 +37,11 @@ final readonly class PdfSignatureExtractor
 
         return $binary;
     }
+
+    public function extractBinarySignatureWithoutPadding(string $pdfContent): string
+    {
+        $binary = $this->extractBinarySignature($pdfContent);
+
+        return rtrim($binary, "\x00");
+    }
 }

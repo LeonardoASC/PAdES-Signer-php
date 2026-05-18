@@ -55,4 +55,28 @@ final class PdfSignatureExtractorTest extends TestCase
         (new PdfSignatureExtractor())
             ->extractHexSignature('%PDF-1.7');
     }
+
+    public function test_it_extracts_binary_signature_without_padding(): void
+    {
+        $pdf = file_get_contents(
+            __DIR__ . '/Output/debug-signed.pdf'
+        );
+
+        $this->assertNotFalse($pdf);
+
+        $binary = (new PdfSignatureExtractor())
+            ->extractBinarySignatureWithoutPadding($pdf);
+
+        $this->assertNotEmpty($binary);
+
+        $this->assertStringStartsWith(
+            "\x30",
+            $binary
+        );
+
+        $this->assertNotSame(
+            "\x00",
+            substr($binary, -1)
+        );
+    }
 }
