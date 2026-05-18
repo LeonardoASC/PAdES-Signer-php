@@ -77,5 +77,13 @@ final class RealPdfSignerTest extends TestCase
         $this->assertStringContainsString('/Annots [', $content);
         $this->assertStringContainsString('/Subtype /Widget', $content);
         $this->assertStringContainsString('/P ', $content);
+        $this->assertStringContainsString('/M (D:', $content);
+
+        $this->assertStringContainsString('/Name (PAdES Core)', $content);
+
+        $this->assertStringContainsString(
+            '/Reason (Document signed digitally)',
+            $content
+        );
     }
 }

@@ -106,7 +106,11 @@ final readonly class RealPdfSigner
 
     private function signatureObject(): string
     {
-        $contents = new PdfSignatureContents(reservedBytes: 8192);
+        $contents = new PdfSignatureContents(
+            reservedBytes: 8192
+        );
+
+        $date = gmdate('YmdHis');
 
         return "<<\n"
             . "/Type /Sig\n"
@@ -114,6 +118,9 @@ final readonly class RealPdfSigner
             . "/SubFilter /adbe.pkcs7.detached\n"
             . "/ByteRange [********** ********** ********** **********]\n"
             . "/Contents <" . $contents->placeholder() . ">\n"
+            . "/M (D:{$date}+00'00')\n"
+            . "/Name (PAdES Core)\n"
+            . "/Reason (Document signed digitally)\n"
             . ">>";
     }
 
@@ -141,6 +148,7 @@ final readonly class RealPdfSigner
             $pdfContent,
             $byteRange
         );
+
 
         $certificate = new PfxCertificate(
             path: $certificatePath,

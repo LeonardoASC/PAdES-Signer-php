@@ -50,10 +50,15 @@ final readonly class IncrementalPdfWriter
 
         $xrefOffset = $originalLength + strlen($body);
 
-        $xref = "xref\n";
+        ksort($offsets);
 
-        foreach ($offsets as $objectNumber => $offset) {
-            $xref .= "{$objectNumber} 1\n";
+        $firstObject = min(array_keys($offsets));
+        $countObjects = count($offsets);
+
+        $xref = "xref\n";
+        $xref .= "{$firstObject} {$countObjects}\n";
+
+        foreach ($offsets as $offset) {
             $xref .= sprintf("%010d 00000 n \n", $offset);
         }
 
