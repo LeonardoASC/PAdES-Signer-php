@@ -13,31 +13,12 @@ final readonly class IncrementalPdfWriter
         int $objectNumber,
         string $objectBody
     ): string {
-        $originalLength = strlen($pdfContent);
-        $previousStartXref = $this->getLastStartXref($pdfContent);
-
-        $object = "\n"
-            . "{$objectNumber} 0 obj\n"
-            . $objectBody . "\n"
-            . "endobj\n";
-
-        $objectOffset = $originalLength;
-        $xrefOffset = $objectOffset + strlen($object);
-
-        $xref = "xref\n"
-            . "{$objectNumber} 1\n"
-            . sprintf("%010d 00000 n \n", $objectOffset);
-
-        $trailer = "trailer\n"
-            . "<<\n"
-            . "/Size " . ($objectNumber + 1) . "\n"
-            . "/Prev " . $previousStartXref . "\n"
-            . ">>\n"
-            . "startxref\n"
-            . $xrefOffset . "\n"
-            . "%%EOF\n";
-
-        return $pdfContent . $object . $xref . $trailer;
+        return $this->appendObjects(
+            pdfContent: $pdfContent,
+            objects: [
+                $objectNumber => $objectBody,
+            ]
+        );
     }
 
     /**
@@ -53,6 +34,7 @@ final readonly class IncrementalPdfWriter
 
         $originalLength = strlen($pdfContent);
         $previousStartXref = $this->getLastStartXref($pdfContent);
+        $rootReference = $this->getRootReference($pdfContent);
 
         $body = '';
         $offsets = [];
@@ -80,6 +62,7 @@ final readonly class IncrementalPdfWriter
         $trailer = "trailer\n"
             . "<<\n"
             . "/Size {$size}\n"
+            . "/Root {$rootReference}\n"
             . "/Prev {$previousStartXref}\n"
             . ">>\n"
             . "startxref\n"
@@ -96,5 +79,14 @@ final readonly class IncrementalPdfWriter
         }
 
         return (int) end($matches[1]);
+    }
+
+    public function getRootReference(string $pdfContent): string
+    {
+        if (! preg_match('/\/Root\s+(\d+\s+\d+\s+R)/', $pdfContent, $matches)) {
+            throw new RuntimeException('/Root não encontrado no trailer do PDF.');
+        }
+
+        return $matches[1];
     }
 }

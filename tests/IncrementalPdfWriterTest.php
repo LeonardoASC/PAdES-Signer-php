@@ -11,7 +11,7 @@ final class IncrementalPdfWriterTest extends TestCase
 {
     public function test_it_appends_object_incrementally(): void
     {
-        $pdf = "%PDF-1.7\nstartxref\n9\n%%EOF\n";
+        $pdf = "%PDF-1.7\ntrailer\n<< /Root 1 0 R >>\nstartxref\n9\n%%EOF\n";
 
         $writer = new IncrementalPdfWriter();
 
@@ -27,6 +27,7 @@ final class IncrementalPdfWriterTest extends TestCase
         $this->assertStringContainsString("startxref", $updated);
         $this->assertStringContainsString("%%EOF", $updated);
         $this->assertStringContainsString("/Prev 9", $updated);
+        $this->assertStringContainsString('/Root 1 0 R', $updated);
     }
 
     public function test_it_reads_last_startxref(): void
@@ -40,7 +41,7 @@ final class IncrementalPdfWriterTest extends TestCase
 
     public function test_it_appends_multiple_objects_incrementally(): void
     {
-        $pdf = "%PDF-1.7\nstartxref\n9\n%%EOF\n";
+        $pdf = "%PDF-1.7\ntrailer\n<< /Root 1 0 R >>\nstartxref\n9\n%%EOF\n";
 
         $writer = new IncrementalPdfWriter();
 
@@ -57,5 +58,18 @@ final class IncrementalPdfWriterTest extends TestCase
         $this->assertStringContainsString("<< /First true >>", $updated);
         $this->assertStringContainsString("<< /Second true >>", $updated);
         $this->assertStringContainsString("/Prev 9", $updated);
+        $this->assertStringContainsString('/Root 1 0 R', $updated);
+    }
+
+    public function test_it_reads_root_reference(): void
+    {
+        $pdf = "%PDF-1.7\ntrailer\n<< /Root 7 0 R >>\nstartxref\n123\n%%EOF\n";
+
+        $writer = new IncrementalPdfWriter();
+
+        $this->assertSame(
+            '7 0 R',
+            $writer->getRootReference($pdf)
+        );
     }
 }

@@ -50,12 +50,27 @@ final readonly class RealPdfSigner
                 acroFormObjectNumber: $acroFormObjectNumber
             );
 
+        $pageInspector = new PdfPageInspector();
+
+        $pageNumber = $pageInspector
+            ->getFirstPageObjectNumber($content);
+
+        $pageBody = $pageInspector
+            ->getFirstPageObjectBody($content);
+
+        $updatedPage = (new PdfPageUpdater())
+            ->addAnnotation(
+                pageBody: $pageBody,
+                widgetObjectNumber: $widgetObjectNumber
+            );
+
         $objects = [
             $signatureObjectNumber => $this->signatureObject(),
 
             $widgetObjectNumber => (new PdfSignatureWidget())
                 ->build(
-                    signatureObjectNumber: $signatureObjectNumber
+                    signatureObjectNumber: $signatureObjectNumber,
+                    pageObjectNumber: $pageNumber
                 ),
 
             $acroFormObjectNumber => (new PdfAcroForm())
@@ -64,6 +79,8 @@ final readonly class RealPdfSigner
                 ),
 
             $catalogNumber => $updatedCatalog,
+
+            $pageNumber => $updatedPage,
         ];
 
         $updated = (new IncrementalPdfWriter())

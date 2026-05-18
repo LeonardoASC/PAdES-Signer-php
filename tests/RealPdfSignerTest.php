@@ -61,17 +61,21 @@ final class RealPdfSignerTest extends TestCase
 
         $content = file_get_contents($output);
 
+        file_put_contents(
+            __DIR__ . '/Output/debug-signed.pdf',
+            $content
+        );
+
         $this->assertStringContainsString('/Type /Sig', $content);
         $this->assertStringContainsString('/ByteRange [0 ', $content);
         $this->assertStringNotContainsString('/ByteRange [**********', $content);
         $this->assertStringContainsString('/Contents <3082', $content);
-
         $this->assertStringContainsString('/Subtype /Widget', $content);
-
         $this->assertStringContainsString('/FT /Sig', $content);
-
         $this->assertStringContainsString('/Fields [', $content);
-
         $this->assertStringContainsString('/AcroForm ', $content);
+        $this->assertStringContainsString('/Annots [', $content);
+        $this->assertStringContainsString('/Subtype /Widget', $content);
+        $this->assertStringContainsString('/P ', $content);
     }
 }
