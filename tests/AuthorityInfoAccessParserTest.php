@@ -28,4 +28,24 @@ TEXT;
             $parser->caIssuersUrl($value)
         );
     }
+
+    public function test_it_extracts_urls_from_common_openssl_variants(): void
+    {
+        $value = <<<TEXT
+OCSP;URI:http://ocsp.example.com
+caIssuers: URI:http://ca.example.com/issuer.crt
+TEXT;
+
+        $parser = new AuthorityInfoAccessParser();
+
+        $this->assertSame(
+            'http://ocsp.example.com',
+            $parser->ocspUrl($value)
+        );
+
+        $this->assertSame(
+            'http://ca.example.com/issuer.crt',
+            $parser->caIssuersUrl($value)
+        );
+    }
 }

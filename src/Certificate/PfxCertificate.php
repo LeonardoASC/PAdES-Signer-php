@@ -38,6 +38,31 @@ final readonly class PfxCertificate
         return $this->certificates['cert'];
     }
 
+    /**
+     * @return array<string>
+     */
+    public function getExtraCertificates(): array
+    {
+        $extraCertificates = $this->certificates['extracerts'] ?? [];
+
+        if (is_string($extraCertificates)) {
+            return [$extraCertificates];
+        }
+
+        return $extraCertificates;
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getCertificateChain(): array
+    {
+        return [
+            $this->getPublicCertificate(),
+            ...$this->getExtraCertificates(),
+        ];
+    }
+
     public function getInfo(): array
     {
         $info = openssl_x509_parse(

@@ -42,7 +42,7 @@ final readonly class X509CertificateInfoExtractor
             'issuerNameDer' => (new X509NameDerExtractor())
                 ->extractSubjectNameDer($issuerCertificatePem),
             'issuerPublicKeyDer' => (new X509PublicKeyDerExtractor())
-                ->extractSubjectPublicKeyDer($issuerCertificatePem),
+                ->extractSubjectPublicKeyBitStringValue($issuerCertificatePem),
         ];
     }
 }

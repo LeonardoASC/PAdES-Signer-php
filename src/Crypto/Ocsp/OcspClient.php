@@ -6,6 +6,10 @@ namespace NihilLabs\Pades\Crypto\Ocsp;
 
 final readonly class OcspClient
 {
+    public function __construct(
+        private int $timeoutSeconds = 30
+    ) {}
+
     public function request(
         string $url,
         string $requestDer
@@ -19,6 +23,7 @@ final readonly class OcspClient
                 ]),
                 'content' => $requestDer,
                 'ignore_errors' => true,
+                'timeout' => $this->timeoutSeconds,
             ],
         ]);
 

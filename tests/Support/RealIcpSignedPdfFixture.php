@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades\Tests\Support;
 
+use NihilLabs\Pades\Certificate\PfxCertificate;
 use NihilLabs\Pades\Crypto\Timestamp\HttpTimestampClient;
 use NihilLabs\Pades\Pdf\MinimalPdfGenerator;
 use NihilLabs\Pades\Pdf\RealPdfSigner;
@@ -52,6 +53,18 @@ final readonly class RealIcpSignedPdfFixture
         return $output;
     }
 
+    public static function certificate(): PfxCertificate
+    {
+        if (! self::isAvailable()) {
+            throw new RuntimeException(self::skipMessage());
+        }
+
+        return new PfxCertificate(
+            path: self::certificatePath(),
+            password: self::certificatePassword()
+        );
+    }
+
     public static function timestampedPdfContent(): string
     {
         $pdf = file_get_contents(self::timestampedPdfPath());
@@ -68,12 +81,12 @@ final readonly class RealIcpSignedPdfFixture
         return dirname(__DIR__) . '/Output/' . $file;
     }
 
-    private static function certificatePath(): string
+    public static function certificatePath(): string
     {
         return dirname(__DIR__) . '/Fixtures/icp-valid.pfx';
     }
 
-    private static function certificatePassword(): ?string
+    public static function certificatePassword(): ?string
     {
         $password = getenv('ICP_PFX_PASSWORD');
 

@@ -29,12 +29,8 @@ final readonly class CrlUrlResolver
             return [];
         }
 
-        preg_match_all(
-            '/URI:([^\s]+)/i',
-            $value,
-            $matches
-        );
+        preg_match_all('/https?:\/\/[^\s,;<>"]+/i', $value, $matches);
 
-        return $matches[1] ?? [];
+        return array_values(array_unique($matches[0] ?? []));
     }
 }
