@@ -26,15 +26,36 @@ final readonly class IssuerAndSerialNumber
      */
     private function issuerName(array $issuer): string
     {
-        $commonName = $issuer['CN'] ?? 'Unknown Issuer';
+        $attributes = '';
 
-        return Der::sequence(
-            Der::set(
+        $map = [
+            'C' => ['550406', 'printable'],
+            'ST' => ['550408', 'utf8'],
+            'L' => ['550407', 'utf8'],
+            'O' => ['55040A', 'utf8'],
+            'OU' => ['55040B', 'utf8'],
+            'CN' => ['550403', 'utf8'],
+        ];
+
+        foreach ($map as $key => [$oid, $type]) {
+            if (! isset($issuer[$key])) {
+                continue;
+            }
+
+            $value = $issuer[$key];
+
+            $encodedValue = $type === 'printable'
+                ? Der::printableString($value)
+                : Der::utf8String($value);
+
+            $attributes .= Der::set(
                 Der::sequence(
-                    Der::oid('550403')
-                        . Der::octetString($commonName)
+                    Der::oid($oid)
+                        . $encodedValue
                 )
-            )
-        );
+            );
+        }
+
+        return Der::sequence($attributes);
     }
 }

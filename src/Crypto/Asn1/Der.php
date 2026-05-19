@@ -118,4 +118,25 @@ final readonly class Der
             . self::length(strlen($bytes))
             . $bytes;
     }
+
+    public static function utf8String(string $value): string
+    {
+        return "\x0C" . self::length(strlen($value)) . $value;
+    }
+
+    public static function printableString(string $value): string
+    {
+        return "\x13" . self::length(strlen($value)) . $value;
+    }
+    
+    public static function contextSpecificImplicitFromEncoded(
+        int $tag,
+        string $encoded
+    ): string {
+        if ($encoded === '') {
+            return chr(0xA0 + $tag) . "\x00";
+        }
+
+        return chr(0xA0 + $tag) . substr($encoded, 1);
+    }
 }

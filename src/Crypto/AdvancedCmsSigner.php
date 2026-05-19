@@ -10,6 +10,7 @@ use NihilLabs\Pades\Crypto\Cades\SignedAttributesBuilder;
 use NihilLabs\Pades\Crypto\Cades\SignedAttributesSigner;
 use NihilLabs\Pades\Crypto\Cades\SignedDataBuilder;
 use NihilLabs\Pades\Crypto\Cades\SignerInfoBuilder;
+use NihilLabs\Pades\Crypto\Asn1\Der;
 
 final readonly class AdvancedCmsSigner implements CmsSignerInterface
 {
@@ -20,20 +21,25 @@ final readonly class AdvancedCmsSigner implements CmsSignerInterface
     public function signDetachedDer(
         string $data
     ): string {
-        $signedAttributes = (new SignedAttributesBuilder())
+        $signedAttributesForSignature = (new SignedAttributesBuilder())
             ->build(
                 data: $data,
                 certificatePem: $this->certificate->getPublicCertificate()
             );
 
+        $signedAttributesForCms = Der::contextSpecificImplicitFromEncoded(
+            0,
+            $signedAttributesForSignature
+        );
+
         $encryptedDigest = (new SignedAttributesSigner(
             $this->certificate
-        ))->sign($signedAttributes);
+        ))->sign($signedAttributesForSignature);
 
         $signerInfo = (new SignerInfoBuilder())
             ->build(
                 certificate: $this->certificate,
-                signedAttributes: $signedAttributes,
+                signedAttributesForCms: $signedAttributesForCms,
                 encryptedDigest: $encryptedDigest
             );
 

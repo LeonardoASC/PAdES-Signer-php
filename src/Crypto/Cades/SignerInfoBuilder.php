@@ -11,14 +11,14 @@ final readonly class SignerInfoBuilder
 {
     public function build(
         PfxCertificate $certificate,
-        string $signedAttributes,
+        string $signedAttributesForCms,
         string $encryptedDigest
     ): string {
         return Der::sequence(
             Der::integer(1)
                 . $this->sid($certificate)
                 . $this->digestAlgorithm()
-                . Der::contextSpecificConstructed(0, $signedAttributes)
+                . $signedAttributesForCms
                 . $this->signatureAlgorithm()
                 . Der::octetString($encryptedDigest)
         );

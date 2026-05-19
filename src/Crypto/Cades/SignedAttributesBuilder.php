@@ -12,11 +12,17 @@ final readonly class SignedAttributesBuilder
         string $data,
         string $certificatePem
     ): string {
+        $attributes = [
+            $this->contentTypeAttribute(),
+            $this->signingTimeAttribute(),
+            $this->messageDigestAttribute($data),
+            (new SigningCertificateV2())->attribute($certificatePem),
+        ];
+
+        sort($attributes, SORT_STRING);
+
         return Der::set(
-            $this->contentTypeAttribute()
-            . $this->signingTimeAttribute()
-            . $this->messageDigestAttribute($data)
-            . (new SigningCertificateV2())->attribute($certificatePem)
+            implode('', $attributes)
         );
     }
 
@@ -24,9 +30,9 @@ final readonly class SignedAttributesBuilder
     {
         return Der::sequence(
             Der::oid('2a864886f70d010903')
-            . Der::set(
-                Der::oid('2a864886f70d010701')
-            )
+                . Der::set(
+                    Der::oid('2a864886f70d010701')
+                )
         );
     }
 
@@ -34,9 +40,9 @@ final readonly class SignedAttributesBuilder
     {
         return Der::sequence(
             Der::oid('2a864886f70d010905')
-            . Der::set(
-                Der::utcTime(gmdate('ymdHis') . 'Z')
-            )
+                . Der::set(
+                    Der::utcTime(gmdate('ymdHis') . 'Z')
+                )
         );
     }
 
@@ -45,11 +51,11 @@ final readonly class SignedAttributesBuilder
     ): string {
         return Der::sequence(
             Der::oid('2a864886f70d010904')
-            . Der::set(
-                Der::octetString(
-                    hash('sha256', $data, binary: true)
+                . Der::set(
+                    Der::octetString(
+                        hash('sha256', $data, binary: true)
+                    )
                 )
-            )
         );
     }
 }

@@ -10,6 +10,7 @@ use NihilLabs\Pades\Crypto\Cades\SignedAttributesSigner;
 use NihilLabs\Pades\Crypto\Cades\SignedDataBuilder;
 use NihilLabs\Pades\Crypto\Cades\SignerInfoBuilder;
 use PHPUnit\Framework\TestCase;
+use NihilLabs\Pades\Crypto\Asn1\Der;
 
 final class SignedDataBuilderTest extends TestCase
 {
@@ -32,7 +33,10 @@ final class SignedDataBuilderTest extends TestCase
         $signerInfo = (new SignerInfoBuilder())
             ->build(
                 certificate: $certificate,
-                signedAttributes: $attributes,
+                signedAttributesForCms: Der::contextSpecificImplicitFromEncoded(
+                    0,
+                    $attributes
+                ),
                 encryptedDigest: $signature
             );
 
