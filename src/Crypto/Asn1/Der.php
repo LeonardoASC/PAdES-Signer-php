@@ -89,4 +89,33 @@ final readonly class Der
     ): string {
         return chr(0x80 + $tag) . self::length(strlen($content)) . $content;
     }
+    public static function integerFromHex(
+        string $hex
+    ): string {
+        $hex = strtoupper(
+            ltrim($hex, '0')
+        );
+
+        if ($hex === '') {
+            $hex = '00';
+        }
+
+        if (strlen($hex) % 2 !== 0) {
+            $hex = '0' . $hex;
+        }
+
+        $bytes = hex2bin($hex);
+
+        if ($bytes === false) {
+            $bytes = "\x00";
+        }
+
+        if ((ord($bytes[0]) & 0x80) !== 0) {
+            $bytes = "\x00" . $bytes;
+        }
+
+        return "\x02"
+            . self::length(strlen($bytes))
+            . $bytes;
+    }
 }

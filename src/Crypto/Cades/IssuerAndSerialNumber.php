@@ -13,11 +13,11 @@ final readonly class IssuerAndSerialNumber
     {
         $info = $certificate->getInfo();
 
-        $serial = (int) ($info['serialNumber'] ?? 1);
-
         return Der::sequence(
             $this->issuerName($info['issuer'] ?? [])
-            . Der::integer($serial)
+                . Der::integerFromHex(
+                    $certificate->getSerialNumberHex()
+                )
         );
     }
 
@@ -32,7 +32,7 @@ final readonly class IssuerAndSerialNumber
             Der::set(
                 Der::sequence(
                     Der::oid('550403')
-                    . Der::octetString($commonName)
+                        . Der::octetString($commonName)
                 )
             )
         );
