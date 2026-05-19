@@ -11,11 +11,14 @@ use NihilLabs\Pades\Crypto\Cades\SignedAttributesSigner;
 use NihilLabs\Pades\Crypto\Cades\SignedDataBuilder;
 use NihilLabs\Pades\Crypto\Cades\SignerInfoBuilder;
 use NihilLabs\Pades\Crypto\Asn1\Der;
+use NihilLabs\Pades\Crypto\Cades\CertificateRefsAttribute;
+use NihilLabs\Pades\Crypto\Cades\RevocationRefsAttribute;
 use NihilLabs\Pades\Crypto\Cades\SignatureTimestampTokenAttribute;
 use NihilLabs\Pades\Crypto\Cades\UnsignedAttributesBuilder;
 use NihilLabs\Pades\Crypto\Timestamp\Rfc3161TimestampRequest;
 use NihilLabs\Pades\Crypto\Timestamp\TimestampClientInterface;
 use NihilLabs\Pades\Crypto\Timestamp\TimestampResponseParser;
+use NihilLabs\Pades\Crypto\Validation\ValidationMaterialCollector;
 
 final readonly class AdvancedCmsSigner implements CmsSignerInterface
 {
@@ -44,6 +47,8 @@ final readonly class AdvancedCmsSigner implements CmsSignerInterface
 
         $unsignedAttributes = null;
 
+        $unsignedAttributes = [];
+
         if ($this->timestampClient !== null) {
             $timestampRequest = (new Rfc3161TimestampRequest())
                 ->build($encryptedDigest);
@@ -54,19 +59,39 @@ final readonly class AdvancedCmsSigner implements CmsSignerInterface
             $timestampToken = (new TimestampResponseParser())
                 ->extractToken($timestampResponse);
 
-            $timestampAttribute = (new SignatureTimestampTokenAttribute())
+            $unsignedAttributes[] = (new SignatureTimestampTokenAttribute())
                 ->build($timestampToken);
-
-            $unsignedAttributes = (new UnsignedAttributesBuilder())
-                ->build([$timestampAttribute]);
         }
+
+        $validationMaterial = (new ValidationMaterialCollector())
+            ->collect($this->certificate);
+
+        if ($validationMaterial->certificatesDer !== []) {
+            $unsignedAttributes[] = (new CertificateRefsAttribute())
+                ->build($validationMaterial->certificatesDer);
+        }
+
+        if (
+            $validationMaterial->ocspResponsesDer !== []
+            || $validationMaterial->crlsDer !== []
+        ) {
+            $unsignedAttributes[] = (new RevocationRefsAttribute())
+                ->build(
+                    ocspResponsesDer: $validationMaterial->ocspResponsesDer,
+                    crlsDer: $validationMaterial->crlsDer
+                );
+        }
+
+        $unsignedAttributesForCms = $unsignedAttributes === []
+            ? null
+            : (new UnsignedAttributesBuilder())->build($unsignedAttributes);
 
         $signerInfo = (new SignerInfoBuilder())
             ->build(
                 certificate: $this->certificate,
                 signedAttributesForCms: $signedAttributesForCms,
                 encryptedDigest: $encryptedDigest,
-                unsignedAttributesForCms: $unsignedAttributes
+                unsignedAttributesForCms: $unsignedAttributesForCms
             );
 
         $signedData = (new SignedDataBuilder())
@@ -74,6 +99,7 @@ final readonly class AdvancedCmsSigner implements CmsSignerInterface
                 certificate: $this->certificate,
                 signerInfo: $signerInfo
             );
+
 
         return (new ContentInfoBuilder())
             ->build($signedData);
