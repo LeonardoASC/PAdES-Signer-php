@@ -28,4 +28,25 @@ final readonly class PdfCatalogUpdater
 
         return $updated;
     }
+
+    public function addDss(
+        string $catalogBody,
+        int $dssObjectNumber
+    ): string {
+        if (str_contains($catalogBody, '/DSS')) {
+            throw new RuntimeException('O Catalog ja possui /DSS.');
+        }
+
+        $updated = preg_replace(
+            '/>>\s*$/',
+            "/DSS {$dssObjectNumber} 0 R\n>>",
+            $catalogBody
+        );
+
+        if ($updated === null) {
+            throw new RuntimeException('Nao foi possivel atualizar o Catalog.');
+        }
+
+        return $updated;
+    }
 }

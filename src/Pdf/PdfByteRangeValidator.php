@@ -21,16 +21,29 @@ final readonly class PdfByteRangeValidator
         $start2 = (int) $matches[3];
         $length2 = (int) $matches[4];
 
-        $contentsLength = $start2 - ($start1 + $length1);
-
-        if ($contentsLength <= 0) {
+        if ($start1 !== 0) {
             return false;
         }
 
-        $totalCovered = $length1 + $length2;
+        $contentsStart = $start1 + $length1;
+        $contentsEnd = $start2;
+        $contentsLength = $contentsEnd - $contentsStart;
 
-        $expectedTotal = strlen($pdfContent) - $contentsLength;
+        if ($contentsStart < 1 || $contentsLength <= 0) {
+            return false;
+        }
 
-        return $totalCovered === $expectedTotal;
+        if (
+            ! isset($pdfContent[$contentsStart - 1])
+            || ! isset($pdfContent[$contentsEnd])
+            || $pdfContent[$contentsStart - 1] !== '<'
+            || $pdfContent[$contentsEnd] !== '>'
+        ) {
+            return false;
+        }
+
+        $signedRevisionEnd = $start2 + $length2;
+
+        return $signedRevisionEnd <= strlen($pdfContent);
     }
 }

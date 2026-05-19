@@ -42,4 +42,25 @@ final class PdfCatalogUpdaterTest extends TestCase
             acroFormObjectNumber: 20
         );
     }
+
+    public function test_it_adds_dss_to_catalog(): void
+    {
+        $catalog = "<< /Type /Catalog /Pages 1 0 R /AcroForm 20 0 R >>";
+
+        $updated = (new PdfCatalogUpdater())
+            ->addDss(
+                catalogBody: $catalog,
+                dssObjectNumber: 30
+            );
+
+        $this->assertStringContainsString(
+            '/DSS 30 0 R',
+            $updated
+        );
+
+        $this->assertStringContainsString(
+            '/AcroForm 20 0 R',
+            $updated
+        );
+    }
 }

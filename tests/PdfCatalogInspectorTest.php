@@ -53,4 +53,23 @@ PDF;
 
         $inspector->getCatalogObjectNumber('%PDF-1.7');
     }
+
+    public function test_it_reads_latest_incremental_catalog_revision(): void
+    {
+        $pdf = <<<PDF
+7 0 obj
+<< /Type /Catalog /Pages 1 0 R >>
+endobj
+7 0 obj
+<< /Type /Catalog /Pages 1 0 R /AcroForm 20 0 R >>
+endobj
+PDF;
+
+        $inspector = new PdfCatalogInspector();
+
+        $this->assertSame(
+            '<< /Type /Catalog /Pages 1 0 R /AcroForm 20 0 R >>',
+            $inspector->getCatalogObjectBody($pdf)
+        );
+    }
 }
