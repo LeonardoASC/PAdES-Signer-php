@@ -120,7 +120,7 @@ final readonly class RealPdfSigner
         return "<<\n"
             . "/Type /Sig\n"
             . "/Filter /Adobe.PPKLite\n"
-            . "/SubFilter /adbe.pkcs7.detached\n"
+            . "/SubFilter /ETSI.CAdES.detached\n"
             . "/ByteRange [********** ********** ********** **********]\n"
             . "/Contents <" . $contents->placeholder() . ">\n"
             . "/M (D:{$date}+00'00')\n"

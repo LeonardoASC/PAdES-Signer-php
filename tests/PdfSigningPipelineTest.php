@@ -73,6 +73,11 @@ final class PdfSigningPipelineTest extends TestCase
         $this->assertFileExists($output);
 
         $this->assertStringContainsString(
+            '/SubFilter /ETSI.CAdES.detached',
+            $pdf
+        );
+
+        $this->assertStringContainsString(
             '/ByteRange [0 ',
             $pdf
         );

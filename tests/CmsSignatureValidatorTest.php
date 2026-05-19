@@ -6,17 +6,16 @@ namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Crypto\CmsSignatureValidator;
 use NihilLabs\Pades\Pdf\PdfSignatureExtractor;
+use NihilLabs\Pades\Tests\Support\SignedPdfFixture;
 use PHPUnit\Framework\TestCase;
 
 final class CmsSignatureValidatorTest extends TestCase
 {
     public function test_it_validates_real_pdf_signature_cms(): void
     {
-        $pdf = file_get_contents(
-            __DIR__ . '/Output/debug-signed.pdf'
+        $pdf = SignedPdfFixture::signedPdfContent(
+            'cms-signature-validator'
         );
-
-        $this->assertNotFalse($pdf);
 
         $binary = (new PdfSignatureExtractor())
             ->extractBinarySignatureWithoutPadding($pdf);

@@ -61,6 +61,40 @@ final class IncrementalPdfWriterTest extends TestCase
         $this->assertStringContainsString('/Root 1 0 R', $updated);
     }
 
+    public function test_it_writes_separate_xref_sections_for_non_contiguous_objects(): void
+    {
+        $pdf = "%PDF-1.7\ntrailer\n<< /Root 1 0 R >>\nstartxref\n9\n%%EOF\n";
+
+        $writer = new IncrementalPdfWriter();
+
+        $updated = $writer->appendObjects(
+            pdfContent: $pdf,
+            objects: [
+                12 => "<< /Signature true >>",
+                13 => "<< /Widget true >>",
+                14 => "<< /AcroForm true >>",
+                11 => "<< /Catalog true >>",
+                7 => "<< /Page true >>",
+            ]
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/xref\s+7 1\s+\d{10} 00000 n\s+11 4\s+\d{10} 00000 n\s+\d{10} 00000 n\s+\d{10} 00000 n\s+\d{10} 00000 n/s',
+            $updated
+        );
+
+        foreach ([7, 11, 12, 13, 14] as $objectNumber) {
+            $offset = strpos($updated, "{$objectNumber} 0 obj");
+
+            $this->assertNotFalse($offset);
+
+            $this->assertStringContainsString(
+                sprintf('%010d 00000 n', $offset),
+                $updated
+            );
+        }
+    }
+
     public function test_it_reads_root_reference(): void
     {
         $pdf = "%PDF-1.7\ntrailer\n<< /Root 7 0 R >>\nstartxref\n123\n%%EOF\n";

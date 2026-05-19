@@ -6,17 +6,16 @@ namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Crypto\CmsBaselineProfile;
 use NihilLabs\Pades\Pdf\PdfSignatureExtractor;
+use NihilLabs\Pades\Tests\Support\SignedPdfFixture;
 use PHPUnit\Framework\TestCase;
 
 final class CmsBaselineProfileTest extends TestCase
 {
     public function test_it_detects_signed_data_oid_in_pdf_signature(): void
     {
-        $pdf = file_get_contents(
-            __DIR__ . '/Output/debug-signed.pdf'
+        $pdf = SignedPdfFixture::signedPdfContent(
+            'cms-baseline-signed-data'
         );
-
-        $this->assertNotFalse($pdf);
 
         $cms = (new PdfSignatureExtractor())
             ->extractBinarySignatureWithoutPadding($pdf);
@@ -30,11 +29,9 @@ final class CmsBaselineProfileTest extends TestCase
 
     public function test_it_inspects_baseline_profile(): void
     {
-        $pdf = file_get_contents(
-            __DIR__ . '/Output/debug-signed.pdf'
+        $pdf = SignedPdfFixture::signedPdfContent(
+            'cms-baseline-profile'
         );
-
-        $this->assertNotFalse($pdf);
 
         $cms = (new PdfSignatureExtractor())
             ->extractBinarySignatureWithoutPadding($pdf);
@@ -59,11 +56,9 @@ final class CmsBaselineProfileTest extends TestCase
 
     public function test_current_pdf_signature_includes_signing_certificate_v2(): void
     {
-        $pdf = file_get_contents(
-            __DIR__ . '/Output/debug-signed.pdf'
+        $pdf = SignedPdfFixture::signedPdfContent(
+            'cms-baseline-signing-certificate-v2'
         );
-
-        $this->assertNotFalse($pdf);
 
         $cms = (new PdfSignatureExtractor())
             ->extractBinarySignatureWithoutPadding($pdf);

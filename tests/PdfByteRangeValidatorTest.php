@@ -5,17 +5,16 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Pdf\PdfByteRangeValidator;
+use NihilLabs\Pades\Tests\Support\SignedPdfFixture;
 use PHPUnit\Framework\TestCase;
 
 final class PdfByteRangeValidatorTest extends TestCase
 {
     public function test_it_validates_real_signed_pdf_byte_range(): void
     {
-        $pdf = file_get_contents(
-            __DIR__ . '/Output/debug-signed.pdf'
+        $pdf = SignedPdfFixture::signedPdfContent(
+            'pdf-byte-range-validator'
         );
-
-        $this->assertNotFalse($pdf);
 
         $isValid = (new PdfByteRangeValidator())
             ->validate($pdf);

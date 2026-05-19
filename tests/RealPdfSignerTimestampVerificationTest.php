@@ -38,6 +38,7 @@ final class RealPdfSignerTimestampVerificationTest extends TestCase
         $input = __DIR__ . '/Output/verify-timestamp-input.pdf';
 
         $output = __DIR__ . '/Output/verify-timestamp-output.pdf';
+        @unlink($output);
 
         (new MinimalPdfGenerator())
             ->generate($input);

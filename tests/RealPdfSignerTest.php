@@ -34,7 +34,7 @@ final class RealPdfSignerTest extends TestCase
 
         $this->assertStringContainsString('/Type /Sig', $content);
         $this->assertStringContainsString('/Filter /Adobe.PPKLite', $content);
-        $this->assertStringContainsString('/SubFilter /adbe.pkcs7.detached', $content);
+        $this->assertStringContainsString('/SubFilter /ETSI.CAdES.detached', $content);
         $this->assertStringContainsString('/Contents <', $content);
         $this->assertStringContainsString('/ByteRange [**********', $content);
     }
@@ -61,12 +61,8 @@ final class RealPdfSignerTest extends TestCase
 
         $content = file_get_contents($output);
 
-        file_put_contents(
-            __DIR__ . '/Output/debug-signed.pdf',
-            $content
-        );
-
         $this->assertStringContainsString('/Type /Sig', $content);
+        $this->assertStringContainsString('/SubFilter /ETSI.CAdES.detached', $content);
         $this->assertStringContainsString('/ByteRange [0 ', $content);
         $this->assertStringNotContainsString('/ByteRange [**********', $content);
         $this->assertStringContainsString('/Contents <3082', $content);

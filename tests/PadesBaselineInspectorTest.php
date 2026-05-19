@@ -6,17 +6,16 @@ namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Crypto\PadesBaselineInspector;
 use NihilLabs\Pades\Pdf\PdfSignatureExtractor;
+use NihilLabs\Pades\Tests\Support\SignedPdfFixture;
 use PHPUnit\Framework\TestCase;
 
 final class PadesBaselineInspectorTest extends TestCase
 {
     public function test_it_inspects_current_pades_baseline_status(): void
     {
-        $pdf = file_get_contents(
-            __DIR__ . '/Output/debug-signed.pdf'
+        $pdf = SignedPdfFixture::signedPdfContent(
+            'pades-baseline-inspector'
         );
-
-        $this->assertNotFalse($pdf);
 
         $cms = (new PdfSignatureExtractor())
             ->extractBinarySignatureWithoutPadding($pdf);

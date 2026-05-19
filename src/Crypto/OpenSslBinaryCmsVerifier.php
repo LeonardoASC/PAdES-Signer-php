@@ -8,6 +8,10 @@ use RuntimeException;
 
 final readonly class OpenSslBinaryCmsVerifier
 {
+    public function __construct(
+        private ?string $opensslBinary = null
+    ) {}
+
     public function verify(
         string $cmsDer,
         string $signedData
@@ -24,7 +28,8 @@ final readonly class OpenSslBinaryCmsVerifier
         file_put_contents($dataFile, $signedData);
 
         $command = sprintf(
-            'openssl cms -verify -binary -inform DER -in %s -content %s -noverify -out %s 2>&1',
+            '%s cms -verify -binary -inform DER -in %s -content %s -noverify -out %s 2>&1',
+            escapeshellarg($this->resolveOpenSslBinary()),
             escapeshellarg($cmsFile),
             escapeshellarg($dataFile),
             escapeshellarg($outFile)
@@ -37,5 +42,43 @@ final readonly class OpenSslBinaryCmsVerifier
         @unlink($outFile);
 
         return $exitCode === 0;
+    }
+
+    private function resolveOpenSslBinary(): string
+    {
+        if ($this->opensslBinary !== null) {
+            return $this->opensslBinary;
+        }
+
+        $fromEnvironment = getenv('OPENSSL_BINARY');
+
+        if (is_string($fromEnvironment) && $fromEnvironment !== '') {
+            return $fromEnvironment;
+        }
+
+        foreach ($this->candidateBinaries() as $candidate) {
+            if (is_file($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return 'openssl';
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function candidateBinaries(): array
+    {
+        if (PHP_OS_FAMILY !== 'Windows') {
+            return [];
+        }
+
+        return [
+            'C:\\Program Files\\Git\\mingw64\\bin\\openssl.exe',
+            'C:\\Program Files\\Git\\usr\\bin\\openssl.exe',
+            'C:\\OpenSSL-Win64\\bin\\openssl.exe',
+            'C:\\OpenSSL-Win32\\bin\\openssl.exe',
+        ];
     }
 }

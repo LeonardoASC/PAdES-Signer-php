@@ -15,7 +15,7 @@ final readonly class FakePdfBuilder
 <<
 /Type /Sig
 /Filter /Adobe.PPKLite
-/SubFilter /adbe.pkcs7.detached
+/SubFilter /ETSI.CAdES.detached
 /ByteRange [********** ********** ********** **********]
 /Contents <{$contentsPlaceholder}>
 >>

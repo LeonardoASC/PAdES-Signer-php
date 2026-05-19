@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Pdf\PdfSignatureExtractor;
+use NihilLabs\Pades\Tests\Support\SignedPdfFixture;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -12,11 +13,9 @@ final class PdfSignatureExtractorTest extends TestCase
 {
     public function test_it_extracts_hex_signature(): void
     {
-        $pdf = file_get_contents(
-            __DIR__ . '/Output/debug-signed.pdf'
+        $pdf = SignedPdfFixture::signedPdfContent(
+            'pdf-signature-extractor-hex'
         );
-
-        $this->assertNotFalse($pdf);
 
         $hex = (new PdfSignatureExtractor())
             ->extractHexSignature($pdf);
@@ -31,11 +30,9 @@ final class PdfSignatureExtractorTest extends TestCase
 
     public function test_it_extracts_binary_signature(): void
     {
-        $pdf = file_get_contents(
-            __DIR__ . '/Output/debug-signed.pdf'
+        $pdf = SignedPdfFixture::signedPdfContent(
+            'pdf-signature-extractor-binary'
         );
-
-        $this->assertNotFalse($pdf);
 
         $binary = (new PdfSignatureExtractor())
             ->extractBinarySignature($pdf);
@@ -58,11 +55,9 @@ final class PdfSignatureExtractorTest extends TestCase
 
     public function test_it_extracts_binary_signature_without_padding(): void
     {
-        $pdf = file_get_contents(
-            __DIR__ . '/Output/debug-signed.pdf'
+        $pdf = SignedPdfFixture::signedPdfContent(
+            'pdf-signature-extractor-without-padding'
         );
-
-        $this->assertNotFalse($pdf);
 
         $binary = (new PdfSignatureExtractor())
             ->extractBinarySignatureWithoutPadding($pdf);

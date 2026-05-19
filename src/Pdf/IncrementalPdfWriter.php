@@ -40,10 +40,10 @@ final readonly class IncrementalPdfWriter
         $offsets = [];
 
         foreach ($objects as $objectNumber => $objectBody) {
+            $body .= "\n";
             $offsets[$objectNumber] = $originalLength + strlen($body);
 
-            $body .= "\n"
-                . "{$objectNumber} 0 obj\n"
+            $body .= "{$objectNumber} 0 obj\n"
                 . $objectBody . "\n"
                 . "endobj\n";
         }
@@ -52,15 +52,7 @@ final readonly class IncrementalPdfWriter
 
         ksort($offsets);
 
-        $firstObject = min(array_keys($offsets));
-        $countObjects = count($offsets);
-
-        $xref = "xref\n";
-        $xref .= "{$firstObject} {$countObjects}\n";
-
-        foreach ($offsets as $offset) {
-            $xref .= sprintf("%010d 00000 n \n", $offset);
-        }
+        $xref = $this->buildXref($offsets);
 
         $size = max(array_keys($objects)) + 1;
 
@@ -75,6 +67,67 @@ final readonly class IncrementalPdfWriter
             . "%%EOF\n";
 
         return $pdfContent . $body . $xref . $trailer;
+    }
+
+    /**
+     * @param array<int, int> $offsets
+     */
+    private function buildXref(array $offsets): string
+    {
+        ksort($offsets);
+
+        $xref = "xref\n";
+        $sectionStart = null;
+        $sectionOffsets = [];
+        $previousObjectNumber = null;
+
+        foreach ($offsets as $objectNumber => $offset) {
+            if (
+                $sectionStart !== null
+                && $previousObjectNumber !== null
+                && $objectNumber !== $previousObjectNumber + 1
+            ) {
+                $xref .= $this->formatXrefSection(
+                    $sectionStart,
+                    $sectionOffsets
+                );
+
+                $sectionStart = null;
+                $sectionOffsets = [];
+            }
+
+            if ($sectionStart === null) {
+                $sectionStart = $objectNumber;
+            }
+
+            $sectionOffsets[] = $offset;
+            $previousObjectNumber = $objectNumber;
+        }
+
+        if ($sectionStart !== null) {
+            $xref .= $this->formatXrefSection(
+                $sectionStart,
+                $sectionOffsets
+            );
+        }
+
+        return $xref;
+    }
+
+    /**
+     * @param array<int> $offsets
+     */
+    private function formatXrefSection(
+        int $firstObject,
+        array $offsets
+    ): string {
+        $xref = "{$firstObject} " . count($offsets) . "\n";
+
+        foreach ($offsets as $offset) {
+            $xref .= sprintf("%010d 00000 n \n", $offset);
+        }
+
+        return $xref;
     }
 
     public function getLastStartXref(string $pdfContent): int
