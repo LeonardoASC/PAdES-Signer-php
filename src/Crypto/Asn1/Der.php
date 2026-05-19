@@ -50,6 +50,13 @@ final readonly class Der
         return "\x05\x00";
     }
 
+    public static function sha256AlgorithmIdentifier(): string
+    {
+        return self::sequence(
+            self::oid('608648016503040201')
+        );
+    }
+
     public static function utcTime(string $time): string
     {
         return "\x17" . self::length(strlen($time)) . $time;

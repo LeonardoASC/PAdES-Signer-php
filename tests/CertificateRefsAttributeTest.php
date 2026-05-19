@@ -27,5 +27,10 @@ final class CertificateRefsAttributeTest extends TestCase
             hash('sha256', 'certificate-der', binary: true),
             $attribute
         );
+
+        $this->assertStringContainsString(
+            hex2bin('3031302f300b06096086480165030402010420'),
+            $attribute
+        );
     }
 }

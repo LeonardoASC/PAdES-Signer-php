@@ -19,7 +19,10 @@ final readonly class SignedAttributesBuilder
             (new SigningCertificateV2())->attribute($certificatePem),
         ];
 
-        sort($attributes, SORT_STRING);
+        usort(
+            $attributes,
+            static fn (string $left, string $right): int => strcmp($left, $right)
+        );
 
         return Der::set(
             implode('', $attributes)

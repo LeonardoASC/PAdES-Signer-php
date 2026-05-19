@@ -30,18 +30,17 @@ final readonly class CertificateRefsAttribute
     private function certificateRef(string $certificateDer): string
     {
         return Der::sequence(
-            $this->digestAlgorithm()
-            . Der::octetString(
-                hash('sha256', $certificateDer, binary: true)
+            Der::sequence(
+                $this->digestAlgorithm()
+                . Der::octetString(
+                    hash('sha256', $certificateDer, binary: true)
+                )
             )
         );
     }
 
     private function digestAlgorithm(): string
     {
-        return Der::sequence(
-            Der::oid('608648016503040201')
-            . Der::null()
-        );
+        return Der::sha256AlgorithmIdentifier();
     }
 }

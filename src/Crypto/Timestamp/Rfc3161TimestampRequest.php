@@ -30,9 +30,6 @@ final readonly class Rfc3161TimestampRequest
 
     private function hashAlgorithm(): string
     {
-        return Der::sequence(
-            Der::oid('608648016503040201')
-            . Der::null()
-        );
+        return Der::sha256AlgorithmIdentifier();
     }
 }

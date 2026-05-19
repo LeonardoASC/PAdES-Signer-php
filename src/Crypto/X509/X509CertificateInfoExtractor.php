@@ -40,7 +40,7 @@ final readonly class X509CertificateInfoExtractor
                 $certificateData['serialNumberHex']
             ),
             'issuerNameDer' => (new X509NameDerExtractor())
-                ->extractIssuerNameDer($issuerCertificatePem),
+                ->extractSubjectNameDer($issuerCertificatePem),
             'issuerPublicKeyDer' => (new X509PublicKeyDerExtractor())
                 ->extractSubjectPublicKeyDer($issuerCertificatePem),
         ];

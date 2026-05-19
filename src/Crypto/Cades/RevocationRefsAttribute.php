@@ -46,9 +46,6 @@ final readonly class RevocationRefsAttribute
 
     private function digestAlgorithm(): string
     {
-        return Der::sequence(
-            Der::oid('608648016503040201')
-            . Der::null()
-        );
+        return Der::sha256AlgorithmIdentifier();
     }
 }

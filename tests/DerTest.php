@@ -36,4 +36,12 @@ final class DerTest extends TestCase
             $encoded
         );
     }
+
+    public function test_it_encodes_sha256_algorithm_identifier_without_parameters(): void
+    {
+        $this->assertSame(
+            hex2bin('300b0609608648016503040201'),
+            Der::sha256AlgorithmIdentifier()
+        );
+    }
 }

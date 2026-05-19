@@ -29,19 +29,17 @@ final class EssCertIdV2Test extends TestCase
             $encoded
         );
 
-        $this->assertStringContainsString(
-            hash(
-                'sha256',
-                base64_decode(
-                    preg_replace(
-                        '/-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\s+/',
-                        '',
-                        $certificate->getPublicCertificate()
-                    ),
-                    true
-                ),
-                true
+        $certificateDer = base64_decode(
+            preg_replace(
+                '/-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\s+/',
+                '',
+                $certificate->getPublicCertificate()
             ),
+            true
+        );
+
+        $this->assertSame(
+            "\x30\x22\x04\x20" . hash('sha256', $certificateDer, true),
             $encoded
         );
     }
