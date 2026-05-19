@@ -10,7 +10,8 @@ final readonly class SignedAttributesBuilder
 {
     public function build(
         string $data,
-        string $certificatePem
+        string $certificatePem,
+        ?IcpBrasilSignaturePolicy $signaturePolicy = null
     ): string {
         $attributes = [
             $this->contentTypeAttribute(),
@@ -18,6 +19,11 @@ final readonly class SignedAttributesBuilder
             $this->messageDigestAttribute($data),
             (new SigningCertificateV2())->attribute($certificatePem),
         ];
+
+        if ($signaturePolicy !== null) {
+            $attributes[] = (new SignaturePolicyIdentifierAttribute())
+                ->build($signaturePolicy);
+        }
 
         usort(
             $attributes,

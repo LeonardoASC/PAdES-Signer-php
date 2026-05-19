@@ -6,6 +6,7 @@ namespace NihilLabs\Pades\Crypto;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
 use NihilLabs\Pades\Crypto\Cades\ContentInfoBuilder;
+use NihilLabs\Pades\Crypto\Cades\IcpBrasilSignaturePolicy;
 use NihilLabs\Pades\Crypto\Cades\SignedAttributesBuilder;
 use NihilLabs\Pades\Crypto\Cades\SignedAttributesSigner;
 use NihilLabs\Pades\Crypto\Cades\SignedDataBuilder;
@@ -21,7 +22,8 @@ final readonly class AdvancedCmsSigner implements CmsSignerInterface
 {
     public function __construct(
         private PfxCertificate $certificate,
-        private ?TimestampClientInterface $timestampClient = null
+        private ?TimestampClientInterface $timestampClient = null,
+        private ?IcpBrasilSignaturePolicy $signaturePolicy = null
     ) {}
 
     public function signDetachedDer(
@@ -30,7 +32,8 @@ final readonly class AdvancedCmsSigner implements CmsSignerInterface
         $signedAttributesForSignature = (new SignedAttributesBuilder())
             ->build(
                 data: $data,
-                certificatePem: $this->certificate->getPublicCertificate()
+                certificatePem: $this->certificate->getPublicCertificate(),
+                signaturePolicy: $this->signaturePolicy
             );
 
         $signedAttributesForCms = Der::contextSpecificImplicitFromEncoded(
