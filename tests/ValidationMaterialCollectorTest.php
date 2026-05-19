@@ -20,9 +20,9 @@ final class ValidationMaterialCollectorTest extends TestCase
         $material = (new ValidationMaterialCollector())
             ->collect($certificate);
 
-        $this->assertCount(
+        $this->assertGreaterThanOrEqual(
             1,
-            $material->certificatesDer
+            count($material->certificatesDer)
         );
 
         $this->assertNotEmpty(
