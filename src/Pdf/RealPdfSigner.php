@@ -10,6 +10,7 @@ use NihilLabs\Pades\Certificate\PfxCertificate;
 use NihilLabs\Pades\Crypto\CmsSigner;
 use NihilLabs\Pades\Crypto\AdvancedCmsSigner;
 use NihilLabs\Pades\Crypto\Timestamp\TimestampClientInterface;
+use NihilLabs\Pades\Crypto\Cades\IcpBrasilSignaturePolicy;
 
 final readonly class RealPdfSigner
 {
@@ -20,7 +21,8 @@ final readonly class RealPdfSigner
         string $outputPdf,
         ?string $certificatePath = null,
         ?string $certificatePassword = null,
-        ?TimestampClientInterface $timestampClient = null
+        ?TimestampClientInterface $timestampClient = null,
+        ?IcpBrasilSignaturePolicy $signaturePolicy = null
     ): void {
         if (! file_exists($inputPdf)) {
             throw new InvalidArgumentException("PDF de entrada não encontrado: {$inputPdf}");
@@ -99,7 +101,8 @@ final readonly class RealPdfSigner
                 pdfContent: $updated,
                 certificatePath: $certificatePath,
                 certificatePassword: $certificatePassword,
-                timestampClient: $timestampClient
+                timestampClient: $timestampClient,
+                signaturePolicy: $signaturePolicy
             );
         }
 
@@ -135,7 +138,8 @@ final readonly class RealPdfSigner
         string $pdfContent,
         string $certificatePath,
         string $certificatePassword,
-        ?TimestampClientInterface $timestampClient = null
+        ?TimestampClientInterface $timestampClient = null,
+        ?IcpBrasilSignaturePolicy $signaturePolicy = null
     ): string {
         $signaturePlaceholder = new PdfSignaturePlaceholder();
 
@@ -165,9 +169,9 @@ final readonly class RealPdfSigner
 
         $cms = (new AdvancedCmsSigner(
             certificate: $certificate,
-            timestampClient: $timestampClient
-        )
-        )->signDetachedDer(
+            timestampClient: $timestampClient,
+            signaturePolicy: $signaturePolicy
+        ))->signDetachedDer(
             $signedData
         );
 

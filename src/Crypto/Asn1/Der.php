@@ -62,6 +62,16 @@ final readonly class Der
         return "\x17" . self::length(strlen($time)) . $time;
     }
 
+    public static function generalizedTime(string $time): string
+    {
+        return "\x18" . self::length(strlen($time)) . $time;
+    }
+
+    public static function ia5String(string $value): string
+    {
+        return "\x16" . self::length(strlen($value)) . $value;
+    }
+
     public static function integer(int $value): string
     {
         if ($value === 0) {

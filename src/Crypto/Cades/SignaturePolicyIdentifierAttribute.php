@@ -15,9 +15,9 @@ final readonly class SignaturePolicyIdentifierAttribute
     {
         return Der::sequence(
             Der::oid(self::ID_AA_ETS_SIG_POLICY_ID_OID_HEX)
-            . Der::set(
-                $this->signaturePolicyIdentifier($policy)
-            )
+                . Der::set(
+                    $this->signaturePolicyIdentifier($policy)
+                )
         );
     }
 
@@ -26,16 +26,29 @@ final readonly class SignaturePolicyIdentifierAttribute
     ): string {
         return Der::sequence(
             $this->oid($policy->policyOid)
-            . $this->otherHashAlgAndValue($policy->policyHash)
-            . $this->qualifiers($policy)
+                . $this->otherHashAlgAndValue($policy->policyHash)
+                . $this->qualifiers($policy)
         );
+    }
+
+    private function policyHashBytes(string $policyHash): string
+    {
+        if (preg_match('/^[0-9A-Fa-f]{64}$/', $policyHash) === 1) {
+            $bytes = hex2bin($policyHash);
+
+            if ($bytes !== false) {
+                return $bytes;
+            }
+        }
+
+        return $policyHash;
     }
 
     private function otherHashAlgAndValue(string $policyHash): string
     {
         return Der::sequence(
             Der::sha256AlgorithmIdentifier()
-            . Der::octetString($policyHash)
+                . Der::octetString($this->policyHashBytes($policyHash))
         );
     }
 

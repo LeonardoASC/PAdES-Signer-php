@@ -45,7 +45,7 @@ final readonly class RealIcpSignedPdfFixture
             certificatePath: self::certificatePath(),
             certificatePassword: self::certificatePassword(),
             timestampClient: new HttpTimestampClient(
-                url: 'http://timestamp.digicert.com',
+                url: self::timestampUrl(),
                 timeoutSeconds: 30
             )
         );
@@ -104,5 +104,15 @@ final readonly class RealIcpSignedPdfFixture
         if (! is_dir($directory)) {
             mkdir($directory, 0777, true);
         }
+    }
+    public static function timestampUrl(): string
+    {
+        $url = getenv('ICP_TSA_URL');
+
+        if (is_string($url) && $url !== '') {
+            return $url;
+        }
+
+        return 'http://timestamp.digicert.com';
     }
 }
