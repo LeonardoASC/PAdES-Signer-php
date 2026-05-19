@@ -56,4 +56,41 @@ final class SignerInfoBuilderTest extends TestCase
             $signerInfo
         );
     }
+    public function test_it_builds_signer_info_with_unsigned_attributes(): void
+    {
+        $certificate = new PfxCertificate(
+            path: __DIR__ . '/Fixtures/certificate.pfx',
+            password: '123456'
+        );
+
+        $attributes = (new SignedAttributesBuilder())
+            ->build(
+                data: 'hello world',
+                certificatePem: $certificate->getPublicCertificate()
+            );
+
+        $signature = (new SignedAttributesSigner($certificate))
+            ->sign($attributes);
+
+        $unsignedAttributes = \NihilLabs\Pades\Crypto\Asn1\Der::contextSpecificImplicitFromEncoded(
+            1,
+            \NihilLabs\Pades\Crypto\Asn1\Der::set('unsigned')
+        );
+
+        $signerInfo = (new SignerInfoBuilder())
+            ->build(
+                certificate: $certificate,
+                signedAttributesForCms: \NihilLabs\Pades\Crypto\Asn1\Der::contextSpecificImplicitFromEncoded(
+                    0,
+                    $attributes
+                ),
+                encryptedDigest: $signature,
+                unsignedAttributesForCms: $unsignedAttributes
+            );
+
+        $this->assertStringContainsString(
+            'unsigned',
+            $signerInfo
+        );
+    }
 }

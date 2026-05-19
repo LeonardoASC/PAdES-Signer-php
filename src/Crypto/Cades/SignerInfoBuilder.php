@@ -12,16 +12,21 @@ final readonly class SignerInfoBuilder
     public function build(
         PfxCertificate $certificate,
         string $signedAttributesForCms,
-        string $encryptedDigest
+        string $encryptedDigest,
+        ?string $unsignedAttributesForCms = null
     ): string {
-        return Der::sequence(
-            Der::integer(1)
-                . $this->sid($certificate)
-                . $this->digestAlgorithm()
-                . $signedAttributesForCms
-                . $this->signatureAlgorithm()
-                . Der::octetString($encryptedDigest)
-        );
+        $content = Der::integer(1)
+            . $this->sid($certificate)
+            . $this->digestAlgorithm()
+            . $signedAttributesForCms
+            . $this->signatureAlgorithm()
+            . Der::octetString($encryptedDigest);
+
+        if ($unsignedAttributesForCms !== null) {
+            $content .= $unsignedAttributesForCms;
+        }
+
+        return Der::sequence($content);
     }
 
     private function sid(PfxCertificate $certificate): string
