@@ -15,6 +15,10 @@ final class RealWorldPdfTest extends TestCase
 {
     public function test_it_signs_real_world_pdf(): void
     {
+        if (! file_exists(__DIR__ . '/Fixtures/sample.pdf')) {
+            $this->markTestSkipped('sample.pdf não encontrado.');
+        }
+
         $input = __DIR__ . '/Fixtures/sample.pdf';
 
         $output = __DIR__ . '/Output/sample-signed.pdf';
