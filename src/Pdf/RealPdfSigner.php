@@ -13,6 +13,8 @@ use NihilLabs\Pades\Crypto\Timestamp\TimestampClientInterface;
 
 final readonly class RealPdfSigner
 {
+    private const SIGNATURE_RESERVED_BYTES = 65536;
+
     public function sign(
         string $inputPdf,
         string $outputPdf,
@@ -112,7 +114,7 @@ final readonly class RealPdfSigner
     private function signatureObject(): string
     {
         $contents = new PdfSignatureContents(
-            reservedBytes: 8192
+            reservedBytes: self::SIGNATURE_RESERVED_BYTES
         );
 
         $date = gmdate('YmdHis');
@@ -169,7 +171,9 @@ final readonly class RealPdfSigner
             $signedData
         );
 
-        $hexSignature = (new PdfSignatureContents())
+        $hexSignature = (new PdfSignatureContents(
+            reservedBytes: self::SIGNATURE_RESERVED_BYTES
+        ))
             ->encode($cms);
 
         return $signaturePlaceholder->replaceContents(

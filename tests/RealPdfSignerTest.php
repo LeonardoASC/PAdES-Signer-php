@@ -39,6 +39,36 @@ final class RealPdfSignerTest extends TestCase
         $this->assertStringContainsString('/ByteRange [**********', $content);
     }
 
+    public function test_it_reserves_space_for_large_timestamped_cms_signatures(): void
+    {
+        $input = __DIR__ . '/Output/minimal-large-placeholder.pdf';
+        $output = __DIR__ . '/Output/minimal-large-placeholder-signed.pdf';
+
+        if (! is_dir(dirname($input))) {
+            mkdir(dirname($input), 0777, true);
+        }
+
+        (new MinimalPdfGenerator())->generate($input);
+
+        (new RealPdfSigner())->sign($input, $output);
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+
+        preg_match(
+            '/\/Contents\s*<([0-9A-F]+)>/s',
+            $content,
+            $matches
+        );
+
+        $this->assertNotEmpty($matches[1] ?? null);
+        $this->assertGreaterThanOrEqual(
+            131072,
+            strlen($matches[1])
+        );
+    }
+
     public function test_it_fills_signature_placeholders_when_certificate_is_provided(): void
     {
         $input = __DIR__ . '/Output/minimal.pdf';

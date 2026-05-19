@@ -8,21 +8,31 @@ final readonly class PdfSignatureStructureValidator
 {
     public function validate(string $pdfContent): array
     {
-        preg_match(
-            '/(\d+)\s+0\s+obj\s*<<(?:(?!endobj).)*\/Subtype\s*\/Widget(?:(?!endobj).)*\/FT\s*\/Sig(?:(?!endobj).)*\/V\s+(\d+)\s+0\s+R(?:(?!endobj).)*>>\s*endobj/s',
-            $pdfContent,
-            $widgetMatch
-        );
+        $objects = $this->objects($pdfContent);
+        $widgetObjectNumber = null;
+        $signatureObjectNumber = null;
 
-        $widgetObjectNumber = $widgetMatch[1] ?? null;
-        $signatureObjectNumber = $widgetMatch[2] ?? null;
+        foreach ($objects as $objectNumber => $body) {
+            if (
+                ! str_contains($body, '/Subtype /Widget')
+                || ! str_contains($body, '/FT /Sig')
+            ) {
+                continue;
+            }
+
+            $widgetObjectNumber = (string) $objectNumber;
+
+            if (preg_match('/\/V\s+(\d+)\s+0\s+R/', $body, $matches)) {
+                $signatureObjectNumber = $matches[1];
+            }
+
+            break;
+        }
 
         return [
             'has_signature_object' => $signatureObjectNumber !== null
-                && preg_match(
-                    '/\b' . preg_quote($signatureObjectNumber, '/') . '\s+0\s+obj\s*<<(?:(?!endobj).)*\/Type\s*\/Sig(?:(?!endobj).)*>>\s*endobj/s',
-                    $pdfContent
-                ) === 1,
+                && isset($objects[(int) $signatureObjectNumber])
+                && str_contains($objects[(int) $signatureObjectNumber], '/Type /Sig'),
 
             'has_signature_dictionary' => str_contains(
                 $pdfContent,
@@ -90,5 +100,28 @@ final readonly class PdfSignatureStructureValidator
                 $pdfContent
             ) === 1,
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function objects(string $pdfContent): array
+    {
+        if (! preg_match_all(
+            '/(\d+)\s+0\s+obj\s*(.*?)\s*endobj/s',
+            $pdfContent,
+            $matches,
+            PREG_SET_ORDER
+        )) {
+            return [];
+        }
+
+        $objects = [];
+
+        foreach ($matches as $match) {
+            $objects[(int) $match[1]] = $match[2];
+        }
+
+        return $objects;
     }
 }
