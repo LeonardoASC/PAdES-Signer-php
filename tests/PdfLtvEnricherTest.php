@@ -34,6 +34,11 @@ final class PdfLtvEnricherTest extends TestCase
                 )
             );
 
+        file_put_contents(
+            __DIR__ . '/Output/pdf-ltv-enricher-output.pdf',
+            $enrichedPdf
+        );
+
         $this->assertStringStartsWith($signedPdf, $enrichedPdf);
         $this->assertGreaterThan(strlen($signedPdf), strlen($enrichedPdf));
 

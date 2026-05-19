@@ -6,6 +6,7 @@ namespace NihilLabs\Pades\Crypto\Validation;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
 use NihilLabs\Pades\Crypto\X509\CertificateChainBuilder;
+use RuntimeException;
 
 final readonly class ValidationMaterialCollector
 {
@@ -25,24 +26,42 @@ final readonly class ValidationMaterialCollector
 
         return new ValidationMaterial(
             certificatesDer: array_map(
-                fn (string $pem): string => $this->certificateDer($pem),
+                fn(string $pem): string => $this->certificateDer($pem),
                 $chain
             )
         );
     }
 
     private function certificateDer(
-        string $pem
+        string $certificate
     ): string {
-        $clean = preg_replace(
-            '/-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\s+/',
-            '',
-            $pem
-        );
+        if (str_starts_with($certificate, "-----BEGIN CERTIFICATE-----")) {
+            $clean = preg_replace(
+                '/-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\s/',
+                '',
+                $certificate
+            );
 
-        return base64_decode(
-            $clean,
-            strict: true
-        );
+            if ($clean === null || $clean === '') {
+                throw new RuntimeException(
+                    'PEM do certificado inválido.'
+                );
+            }
+
+            $der = base64_decode(
+                $clean,
+                true
+            );
+
+            if ($der === false) {
+                throw new RuntimeException(
+                    'Não foi possível converter certificado PEM para DER.'
+                );
+            }
+
+            return $der;
+        }
+
+        return $certificate;
     }
 }
