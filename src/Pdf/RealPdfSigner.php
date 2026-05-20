@@ -22,7 +22,14 @@ final readonly class RealPdfSigner
         ?string $certificatePath = null,
         ?string $certificatePassword = null,
         ?TimestampClientInterface $timestampClient = null,
-        ?IcpBrasilSignaturePolicy $signaturePolicy = null
+        ?IcpBrasilSignaturePolicy $signaturePolicy = null,
+        bool $visibleSignature = false,
+        array $signatureRect = [48, 48, 547, 96],
+        int $signatureFlags = 132,
+        string $signatureName = 'PAdES Core',
+        string $signatureReason = 'Document signed digitally',
+        ?string $signatureLocation = null,
+        ?string $signatureContactInfo = null
     ): void {
         if (! file_exists($inputPdf)) {
             throw new InvalidArgumentException("PDF de entrada não encontrado: {$inputPdf}");
@@ -42,6 +49,9 @@ final readonly class RealPdfSigner
         $signatureObjectNumber = $nextObjectNumber;
         $widgetObjectNumber = $nextObjectNumber + 1;
         $acroFormObjectNumber = $nextObjectNumber + 2;
+        $appearanceObjectNumber = $visibleSignature
+            ? $nextObjectNumber + 3
+            : null;
 
         $catalogInspector = new PdfCatalogInspector();
 
@@ -72,12 +82,20 @@ final readonly class RealPdfSigner
             );
 
         $objects = [
-            $signatureObjectNumber => $this->signatureObject(),
+            $signatureObjectNumber => $this->signatureObject(
+                name: $signatureName,
+                reason: $signatureReason,
+                location: $signatureLocation,
+                contactInfo: $signatureContactInfo
+            ),
 
             $widgetObjectNumber => (new PdfSignatureWidget())
                 ->build(
                     signatureObjectNumber: $signatureObjectNumber,
-                    pageObjectNumber: $pageNumber
+                    pageObjectNumber: $pageNumber,
+                    rect: $visibleSignature ? $signatureRect : [0, 0, 0, 0],
+                    flags: $visibleSignature ? $signatureFlags : 4,
+                    appearanceObjectNumber: $appearanceObjectNumber
                 ),
 
             $acroFormObjectNumber => (new PdfAcroForm())
@@ -89,6 +107,11 @@ final readonly class RealPdfSigner
 
             $pageNumber => $updatedPage,
         ];
+
+        if ($appearanceObjectNumber !== null) {
+            $objects[$appearanceObjectNumber] = (new PdfSignatureAppearance())
+                ->build("Digitally signed by {$signatureName}");
+        }
 
         $updated = (new IncrementalPdfWriter())
             ->appendObjects(
@@ -114,7 +137,12 @@ final readonly class RealPdfSigner
         }
     }
 
-    private function signatureObject(): string
+    private function signatureObject(
+        string $name = 'PAdES Core',
+        string $reason = 'Document signed digitally',
+        ?string $location = null,
+        ?string $contactInfo = null
+    ): string
     {
         $contents = new PdfSignatureContents(
             reservedBytes: self::SIGNATURE_RESERVED_BYTES
@@ -122,16 +150,34 @@ final readonly class RealPdfSigner
 
         $date = gmdate('YmdHis');
 
-        return "<<\n"
+        $signature = "<<\n"
             . "/Type /Sig\n"
             . "/Filter /Adobe.PPKLite\n"
             . "/SubFilter /ETSI.CAdES.detached\n"
             . "/ByteRange [********** ********** ********** **********]\n"
             . "/Contents <" . $contents->placeholder() . ">\n"
             . "/M (D:{$date}+00'00')\n"
-            . "/Name (PAdES Core)\n"
-            . "/Reason (Document signed digitally)\n"
-            . ">>";
+            . "/Name " . $this->pdfString($name) . "\n"
+            . "/Reason " . $this->pdfString($reason) . "\n";
+
+        if ($location !== null) {
+            $signature .= "/Location " . $this->pdfString($location) . "\n";
+        }
+
+        if ($contactInfo !== null) {
+            $signature .= "/ContactInfo " . $this->pdfString($contactInfo) . "\n";
+        }
+
+        return $signature . ">>";
+    }
+
+    private function pdfString(string $value): string
+    {
+        return '(' . str_replace(
+            ['\\', '(', ')'],
+            ['\\\\', '\\(', '\\)'],
+            $value
+        ) . ')';
     }
 
     private function applySignature(

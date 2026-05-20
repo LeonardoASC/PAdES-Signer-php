@@ -29,7 +29,7 @@ final class CertificateRefsAttributeTest extends TestCase
         );
 
         $this->assertStringContainsString(
-            hex2bin('3031302f300b06096086480165030402010420'),
+            hex2bin('30333031300d060960864801650304020105000420'),
             $attribute
         );
     }

@@ -52,22 +52,22 @@ final class SignerInfoBuilderTest extends TestCase
         );
 
         $this->assertStringContainsString(
-            hex2bin('300b0609608648016503040201'),
-            $signerInfo
-        );
-
-        $this->assertStringNotContainsString(
             hex2bin('300d06096086480165030402010500'),
             $signerInfo
         );
 
+        $this->assertStringNotContainsString(
+            hex2bin('300b0609608648016503040201'),
+            $signerInfo
+        );
+
         $this->assertStringContainsString(
-            hex2bin('2a864886f70d010101'),
+            hex2bin('2a864886f70d01010b'),
             $signerInfo
         );
 
         $this->assertStringNotContainsString(
-            hex2bin('2a864886f70d01010b'),
+            hex2bin('2a864886f70d010101'),
             $signerInfo
         );
 

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Crypto\Cades;
 
 use NihilLabs\Pades\Crypto\Asn1\Der;
+use NihilLabs\Pades\Crypto\X509\X509NameDerExtractor;
+use RuntimeException;
 
 final readonly class EssCertIdV2
 {
@@ -20,6 +22,22 @@ final readonly class EssCertIdV2
 
         return Der::sequence(
             Der::octetString($hash)
+                . $this->issuerSerial($certificatePem)
+        );
+    }
+
+    private function issuerSerial(string $certificatePem): string
+    {
+        $extractor = new X509NameDerExtractor();
+
+        return Der::sequence(
+            Der::sequence(
+                Der::contextSpecificConstructed(
+                    4,
+                    $extractor->extractIssuerNameDer($certificatePem)
+                )
+            )
+                . $extractor->extractSerialNumberDer($certificatePem)
         );
     }
 
@@ -31,6 +49,14 @@ final readonly class EssCertIdV2
             $pem
         );
 
-        return base64_decode($clean, strict: true);
+        $der = base64_decode($clean, strict: true);
+
+        if ($der === false) {
+            throw new RuntimeException(
+                'Nao foi possivel converter certificado PEM para DER.'
+            );
+        }
+
+        return $der;
     }
 }

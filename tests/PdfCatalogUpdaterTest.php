@@ -29,6 +29,21 @@ final class PdfCatalogUpdaterTest extends TestCase
             '/Type /Catalog',
             $updated
         );
+
+        $this->assertStringContainsString(
+            '/Extensions <<',
+            $updated
+        );
+
+        $this->assertStringContainsString(
+            '/ESIC <<',
+            $updated
+        );
+
+        $this->assertStringContainsString(
+            '/BaseVersion /1.7',
+            $updated
+        );
     }
 
     public function test_it_fails_when_catalog_already_has_acroform(): void

@@ -16,6 +16,8 @@ final readonly class PdfCatalogUpdater
             throw new RuntimeException('O Catalog já possui /AcroForm.');
         }
 
+        $catalogBody = $this->addEtsiExtension($catalogBody);
+
         $updated = preg_replace(
             '/>>\s*$/',
             "/AcroForm {$acroFormObjectNumber} 0 R\n>>",
@@ -24,6 +26,46 @@ final readonly class PdfCatalogUpdater
 
         if ($updated === null) {
             throw new RuntimeException('Não foi possível atualizar o Catalog.');
+        }
+
+        return $updated;
+    }
+
+    private function addEtsiExtension(string $catalogBody): string
+    {
+        if (str_contains($catalogBody, '/ESIC')) {
+            return $catalogBody;
+        }
+
+        $extension = "/ESIC <<\n"
+            . "/Type /DeveloperExtensions\n"
+            . "/BaseVersion /1.7\n"
+            . "/ExtensionLevel 1\n"
+            . ">>\n";
+
+        if (str_contains($catalogBody, '/Extensions')) {
+            $updated = preg_replace(
+                '/\/Extensions\s*<</',
+                "/Extensions <<\n{$extension}",
+                $catalogBody,
+                1
+            );
+
+            if ($updated === null) {
+                throw new RuntimeException('Nao foi possivel atualizar /Extensions do Catalog.');
+            }
+
+            return $updated;
+        }
+
+        $updated = preg_replace(
+            '/>>\s*$/',
+            "/Extensions <<\n{$extension}>>\n>>",
+            $catalogBody
+        );
+
+        if ($updated === null) {
+            throw new RuntimeException('Nao foi possivel adicionar /Extensions ao Catalog.');
         }
 
         return $updated;

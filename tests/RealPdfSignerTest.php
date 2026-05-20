@@ -37,6 +37,9 @@ final class RealPdfSignerTest extends TestCase
         $this->assertStringContainsString('/SubFilter /ETSI.CAdES.detached', $content);
         $this->assertStringContainsString('/Contents <', $content);
         $this->assertStringContainsString('/ByteRange [**********', $content);
+        $this->assertStringContainsString('/Extensions <<', $content);
+        $this->assertStringContainsString('/ESIC <<', $content);
+        $this->assertStringNotContainsString('/Prop_Build', $content);
     }
 
     public function test_it_reserves_space_for_large_timestamped_cms_signatures(): void
@@ -100,6 +103,8 @@ final class RealPdfSignerTest extends TestCase
         $this->assertStringContainsString('/FT /Sig', $content);
         $this->assertStringContainsString('/Fields [', $content);
         $this->assertStringContainsString('/AcroForm ', $content);
+        $this->assertStringContainsString('/ESIC <<', $content);
+        $this->assertStringNotContainsString('/Prop_Build', $content);
         $this->assertStringContainsString('/Annots [', $content);
         $this->assertStringContainsString('/Subtype /Widget', $content);
         $this->assertStringContainsString('/P ', $content);
@@ -112,6 +117,51 @@ final class RealPdfSignerTest extends TestCase
             $content
         );
     }
+
+    public function test_it_generates_visible_signature_field_when_requested(): void
+    {
+        $input = __DIR__ . '/Output/minimal-visible-input.pdf';
+        $output = __DIR__ . '/Output/minimal-visible-output.pdf';
+
+        if (! is_dir(dirname($input))) {
+            mkdir(dirname($input), 0777, true);
+        }
+
+        (new MinimalPdfGenerator())->generate($input);
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            visibleSignature: true,
+            signatureName: 'Admin User',
+            signatureReason: 'Assinatura digital de documento assistencial',
+            signatureLocation: 'Prontuario Eletronico MPTO',
+            signatureContactInfo: 'admin@adm.com'
+        );
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertStringContainsString('/Rect [48 48 547 96]', $content);
+        $this->assertStringContainsString('/F 132', $content);
+        $this->assertStringContainsString('/AP <<', $content);
+        $this->assertStringContainsString('/Type /XObject', $content);
+        $this->assertStringContainsString('/Subtype /Form', $content);
+        $this->assertStringContainsString('/BBox [0 0 499 48]', $content);
+        $this->assertStringContainsString('/Name (Admin User)', $content);
+        $this->assertStringContainsString(
+            '/Reason (Assinatura digital de documento assistencial)',
+            $content
+        );
+        $this->assertStringContainsString(
+            '/Location (Prontuario Eletronico MPTO)',
+            $content
+        );
+        $this->assertStringContainsString('/ContactInfo (admin@adm.com)', $content);
+        $this->assertStringContainsString('/ETSI.CAdES.detached', $content);
+        $this->assertStringContainsString('/ESIC <<', $content);
+    }
+
     public function test_real_pdf_signer_generates_pades_b_b_ready_cms(): void
     {
         $input = __DIR__ . '/Output/pades-bb-input.pdf';

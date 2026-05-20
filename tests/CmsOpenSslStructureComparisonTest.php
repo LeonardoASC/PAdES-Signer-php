@@ -75,7 +75,7 @@ final class CmsOpenSslStructureComparisonTest extends TestCase
             $padesPrint
         );
 
-        $this->assertStringNotContainsString(
+        $this->assertStringContainsString(
             'sha256WithRSAEncryption (1.2.840.113549.1.1.11)',
             $this->signerInfoSection($padesPrint)
         );
@@ -94,11 +94,11 @@ final class CmsOpenSslStructureComparisonTest extends TestCase
         return [
             'contentType: pkcs7-signedData',
             'algorithm: sha256 (2.16.840.1.101.3.4.2.1)',
-            'parameter: <ABSENT>',
+            'parameter: NULL',
             'eContentType: pkcs7-data',
             'eContent: <ABSENT>',
             'signatureAlgorithm:',
-            'algorithm: rsaEncryption (1.2.840.113549.1.1.1)',
+            'algorithm: sha256WithRSAEncryption (1.2.840.113549.1.1.11)',
             'object: contentType (1.2.840.113549.1.9.3)',
             'object: signingTime (1.2.840.113549.1.9.5)',
             'UTCTIME:',

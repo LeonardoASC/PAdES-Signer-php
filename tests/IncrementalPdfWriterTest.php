@@ -61,6 +61,28 @@ final class IncrementalPdfWriterTest extends TestCase
         $this->assertStringContainsString('/Root 1 0 R', $updated);
     }
 
+    public function test_it_preserves_info_and_document_id_in_incremental_trailer(): void
+    {
+        $pdf = "%PDF-1.7\n"
+            . "trailer\n"
+            . "<< /Root 1 0 R /Info 2 0 R /ID [ <aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa> <aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa> ] >>\n"
+            . "startxref\n"
+            . "9\n"
+            . "%%EOF\n";
+
+        $updated = (new IncrementalPdfWriter())->appendObject(
+            pdfContent: $pdf,
+            objectNumber: 10,
+            objectBody: "<< /Test true >>"
+        );
+
+        $this->assertStringContainsString('/Info 2 0 R', $updated);
+        $this->assertMatchesRegularExpression(
+            '/\/ID\s*\[\s*<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>\s*<[0-9a-f]{32}>\s*\]/',
+            $updated
+        );
+    }
+
     public function test_it_writes_separate_xref_sections_for_non_contiguous_objects(): void
     {
         $pdf = "%PDF-1.7\ntrailer\n<< /Root 1 0 R >>\nstartxref\n9\n%%EOF\n";

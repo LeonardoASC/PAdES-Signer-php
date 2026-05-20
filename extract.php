@@ -4,20 +4,11 @@ require 'vendor/autoload.php';
 
 use NihilLabs\Pades\Pdf\PdfSignatureExtractor;
 
-$pdf = file_get_contents(
-    'tests/Output/debug-signed.pdf'
-);
-
-if ($pdf === false) {
-    exit('PDF não encontrado');
-}
+$pdf = file_get_contents('atestado-medico-2 (1).pdf');
 
 $cms = (new PdfSignatureExtractor())
     ->extractBinarySignatureWithoutPadding($pdf);
 
-file_put_contents(
-    'tests/Output/signature.der',
-    $cms
-);
+file_put_contents('pyhanko-signature.der', $cms);
 
-echo "DER exportado\n";
+echo "OK\n";

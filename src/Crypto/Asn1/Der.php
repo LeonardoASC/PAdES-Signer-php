@@ -33,6 +33,19 @@ final readonly class Der
         return "\x31" . self::length(strlen($content)) . $content;
     }
 
+    /**
+     * @param array<string> $encodedValues
+     */
+    public static function sortedSetContent(array $encodedValues): string
+    {
+        usort(
+            $encodedValues,
+            static fn (string $left, string $right): int => strcmp($left, $right)
+        );
+
+        return implode('', $encodedValues);
+    }
+
     public static function octetString(string $content): string
     {
         return "\x04" . self::length(strlen($content)) . $content;
@@ -54,6 +67,7 @@ final readonly class Der
     {
         return self::sequence(
             self::oid('608648016503040201')
+                . self::null()
         );
     }
 
@@ -145,7 +159,7 @@ final readonly class Der
     {
         return "\x13" . self::length(strlen($value)) . $value;
     }
-    
+
     public static function contextSpecificImplicitFromEncoded(
         int $tag,
         string $encoded
@@ -154,6 +168,20 @@ final readonly class Der
             return chr(0xA0 + $tag) . "\x00";
         }
 
-        return chr(0xA0 + $tag) . substr($encoded, 1);
+        $firstLengthByte = ord($encoded[1]);
+
+        if (($firstLengthByte & 0x80) === 0) {
+            $lengthBytesCount = 1;
+        } else {
+            $lengthBytesCount = ($firstLengthByte & 0x7F) + 1;
+        }
+
+        $headerLength = 1 + $lengthBytesCount;
+
+        $content = substr($encoded, $headerLength);
+
+        return chr(0xA0 + $tag)
+            . self::length(strlen($content))
+            . $content;
     }
 }

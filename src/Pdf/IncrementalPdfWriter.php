@@ -35,6 +35,8 @@ final readonly class IncrementalPdfWriter
         $originalLength = strlen($pdfContent);
         $previousStartXref = $this->getLastStartXref($pdfContent);
         $rootReference = $this->getRootReference($pdfContent);
+        $infoReference = $this->getInfoReference($pdfContent);
+        $documentId = $this->getDocumentId($pdfContent);
 
         $body = '';
         $offsets = [];
@@ -59,8 +61,17 @@ final readonly class IncrementalPdfWriter
         $trailer = "trailer\n"
             . "<<\n"
             . "/Size {$size}\n"
-            . "/Root {$rootReference}\n"
-            . "/Prev {$previousStartXref}\n"
+            . "/Root {$rootReference}\n";
+
+        if ($infoReference !== null) {
+            $trailer .= "/Info {$infoReference}\n";
+        }
+
+        if ($documentId !== null) {
+            $trailer .= "/ID [ <{$documentId}> <" . bin2hex(random_bytes(16)) . "> ]\n";
+        }
+
+        $trailer .= "/Prev {$previousStartXref}\n"
             . ">>\n"
             . "startxref\n"
             . $xrefOffset . "\n"
@@ -146,5 +157,29 @@ final readonly class IncrementalPdfWriter
         }
 
         return $matches[1];
+    }
+
+    private function getInfoReference(string $pdfContent): ?string
+    {
+        if (! preg_match_all('/\/Info\s+(\d+\s+\d+\s+R)/', $pdfContent, $matches)) {
+            return null;
+        }
+
+        return end($matches[1]) ?: null;
+    }
+
+    private function getDocumentId(string $pdfContent): ?string
+    {
+        if (! preg_match_all('/\/ID\s*\[\s*<([0-9A-Fa-f]+)>/', $pdfContent, $matches)) {
+            return null;
+        }
+
+        $id = end($matches[1]);
+
+        if (! is_string($id) || $id === '') {
+            return null;
+        }
+
+        return strtolower($id);
     }
 }

@@ -57,10 +57,59 @@ final readonly class PfxCertificate
      */
     public function getCertificateChain(): array
     {
-        return [
+        $all = [
             $this->getPublicCertificate(),
             ...$this->getExtraCertificates(),
         ];
+
+        $parsed = [];
+
+        foreach ($all as $pem) {
+            $info = openssl_x509_parse($pem);
+
+            if ($info === false) {
+                continue;
+            }
+
+            $parsed[] = [
+                'pem' => $pem,
+                'subject' => $info['subject'] ?? [],
+                'issuer' => $info['issuer'] ?? [],
+            ];
+        }
+
+        $ordered = [];
+
+        // começa pelo signer
+        $current = $parsed[0];
+
+        $ordered[] = $current['pem'];
+
+        while (true) {
+            $found = null;
+
+            foreach ($parsed as $candidate) {
+                if ($candidate['subject'] === $current['issuer']) {
+                    $found = $candidate;
+                    break;
+                }
+            }
+
+            if ($found === null) {
+                break;
+            }
+
+            // evita loop
+            if (in_array($found['pem'], $ordered, true)) {
+                break;
+            }
+
+            $ordered[] = $found['pem'];
+
+            $current = $found;
+        }
+
+        return $ordered;
     }
 
     public function getInfo(): array

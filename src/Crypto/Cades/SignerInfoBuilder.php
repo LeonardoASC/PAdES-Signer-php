@@ -43,7 +43,7 @@ final readonly class SignerInfoBuilder
     private function signatureAlgorithm(): string
     {
         return Der::sequence(
-            Der::oid('2a864886f70d010101')
+            Der::oid('2a864886f70d01010b')
                 . Der::null()
         );
     }

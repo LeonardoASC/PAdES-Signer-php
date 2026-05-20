@@ -59,14 +59,10 @@ final class SignedDataBuilderTest extends TestCase
         );
 
         $this->assertStringContainsString(
-            hex2bin('300b0609608648016503040201'),
-            $signedData
-        );
-
-        $this->assertStringNotContainsString(
             hex2bin('300d06096086480165030402010500'),
             $signedData
         );
+
 
         $this->assertStringContainsString(
             hex2bin('2a864886f70d010701'),

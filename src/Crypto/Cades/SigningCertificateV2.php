@@ -13,16 +13,20 @@ final readonly class SigningCertificateV2
         $essCertIdV2 = (new EssCertIdV2())
             ->build($certificatePem);
 
-        return Der::sequence($essCertIdV2);
+        return Der::sequence(
+            Der::sequence(
+                $essCertIdV2
+            )
+        );
     }
 
     public function attribute(string $certificatePem): string
     {
         return Der::sequence(
             Der::oid('2a864886f70d010910022f')
-            . Der::set(
-                $this->build($certificatePem)
-            )
+                . Der::set(
+                    $this->build($certificatePem)
+                )
         );
     }
 }

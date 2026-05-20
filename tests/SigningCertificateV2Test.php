@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
+use NihilLabs\Pades\Crypto\Asn1\Der;
 use NihilLabs\Pades\Crypto\Cades\SigningCertificateV2;
+use NihilLabs\Pades\Crypto\X509\X509NameDerExtractor;
 use PHPUnit\Framework\TestCase;
 
 final class SigningCertificateV2Test extends TestCase
@@ -26,6 +28,26 @@ final class SigningCertificateV2Test extends TestCase
 
         $this->assertStringStartsWith(
             "\x30",
+            $encoded
+        );
+
+        $extractor = new X509NameDerExtractor();
+        $issuerSerial = Der::sequence(
+            Der::sequence(
+                Der::contextSpecificConstructed(
+                    4,
+                    $extractor->extractIssuerNameDer(
+                        $certificate->getPublicCertificate()
+                    )
+                )
+            )
+                . $extractor->extractSerialNumberDer(
+                    $certificate->getPublicCertificate()
+                )
+        );
+
+        $this->assertStringContainsString(
+            $issuerSerial,
             $encoded
         );
     }

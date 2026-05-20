@@ -27,7 +27,12 @@ final readonly class SignedAttributesBuilder
 
         usort(
             $attributes,
-            static fn (string $left, string $right): int => strcmp($left, $right)
+            static function (string $left, string $right): int {
+                return strcmp(
+                    bin2hex($left),
+                    bin2hex($right)
+                );
+            }
         );
 
         return Der::set(
