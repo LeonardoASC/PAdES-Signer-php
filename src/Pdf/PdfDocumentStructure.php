@@ -10,7 +10,7 @@ final readonly class PdfDocumentStructure
 {
     /**
      * @param array<int, PdfIndirectObject> $objects
-     * @param array<int, array<int, array{offset:int,generation:int,in_use:bool}>> $xrefTables
+     * @param array<int, array<int, array{offset:int,generation:int,in_use:bool,type?:int,object_stream?:int,index?:int}>> $xrefTables
      * @param array<int, PdfTrailer> $trailers
      */
     public function __construct(

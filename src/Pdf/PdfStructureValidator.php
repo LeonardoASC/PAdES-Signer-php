@@ -42,17 +42,27 @@ final readonly class PdfStructureValidator
                     continue;
                 }
 
-                if (! isset($structure->objects[$objectNumber])) {
-                    throw new RuntimeException("xref referencia objeto ausente: {$objectNumber}.");
+                if (($entry['type'] ?? 1) === 2) {
+                    $objectStream = $entry['object_stream'] ?? null;
+
+                    if (! is_int($objectStream) || ! isset($structure->objects[$objectStream])) {
+                        throw new RuntimeException("xref stream referencia object stream ausente: {$objectNumber}.");
+                    }
+
+                    if (! isset($structure->objects[$objectNumber])) {
+                        throw new RuntimeException("object stream nao contem objeto referenciado: {$objectNumber}.");
+                    }
+
+                    continue;
                 }
 
-                $object = $structure->objects[$objectNumber];
+                $header = substr($structure->content, $entry['offset'], 64);
 
-                if ($object->generation !== $entry['generation']) {
-                    throw new RuntimeException("Geracao xref invalida para objeto {$objectNumber}.");
-                }
-
-                if ($object->offset !== $entry['offset']) {
+                if (! preg_match(
+                    '/^' . preg_quote((string) $objectNumber, '/') . '\s+'
+                        . preg_quote((string) $entry['generation'], '/') . '\s+obj\b/',
+                    $header
+                )) {
                     throw new RuntimeException("Offset xref invalido para objeto {$objectNumber}.");
                 }
             }
@@ -68,8 +78,8 @@ final readonly class PdfStructureValidator
                 throw new RuntimeException('startxref aponta para fora do PDF.');
             }
 
-            if (substr($structure->content, $trailer->startXref, 4) !== 'xref') {
-                throw new RuntimeException('startxref nao aponta para uma xref table.');
+            if (! $this->startXrefPointsToXref($structure, $trailer->startXref)) {
+                throw new RuntimeException('startxref nao aponta para uma xref table ou xref stream.');
             }
 
             $root = $trailer->getReference('Root');
@@ -85,10 +95,44 @@ final readonly class PdfStructureValidator
             }
 
             $size = $trailer->getInteger('Size');
+            $highestObjectBeforeTrailer = $this->highestObjectBeforeOffset(
+                $structure,
+                $trailer->offset
+            );
 
-            if ($size !== null && $size <= $structure->highestObjectNumber()) {
+            if ($size !== null && $size <= $highestObjectBeforeTrailer) {
                 throw new RuntimeException('/Size do trailer e menor que a tabela de objetos.');
             }
         }
+    }
+
+    private function highestObjectBeforeOffset(
+        PdfDocumentStructure $structure,
+        int $offset
+    ): int {
+        $highest = 0;
+
+        if (preg_match_all('/(?m)(\d+)\s+\d+\s+obj\b/', substr($structure->content, 0, $offset), $matches)) {
+            $highest = max(array_map('intval', $matches[1]));
+        }
+
+        return $highest;
+    }
+
+    private function startXrefPointsToXref(
+        PdfDocumentStructure $structure,
+        int $startXref
+    ): bool {
+        if (substr($structure->content, $startXref, 4) === 'xref') {
+            return true;
+        }
+
+        foreach ($structure->objects as $object) {
+            if ($object->offset === $startXref && str_contains($object->body, '/Type /XRef')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

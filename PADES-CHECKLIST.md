@@ -99,22 +99,22 @@ SEM isso o projeto quebra em PDFs reais.
 3. Compatibilidade PDF Moderna
 ## 3.1 PDFs Modernos
 
-- [ ] Suporte a xref stream
-- [ ] Suporte a object streams
-- [ ] Suporte a PDFs linearizados
-- [ ] Suporte a PDFs sem AcroForm
+- [x] Suporte a xref stream
+- [x] Suporte a object streams
+- [x] Suporte a PDFs linearizados
+- [x] Suporte a PDFs sem AcroForm
 4. Incremental Update Real
 
 Essa é uma das partes mais importantes do PAdES.
 
 ## 4.1 Incremental Update Robusto
 
-- [ ] Preservação robusta de revisões
-- [ ] Append mode rigoroso
-- [ ] Assinar PDFs já assinados
-- [ ] Detecção de assinaturas existentes
-- [ ] Suporte real a múltiplas assinaturas
-- [ ] Verificação de integridade incremental
+- [x] Preservação robusta de revisões
+- [x] Append mode rigoroso
+- [x] Assinar PDFs já assinados
+- [x] Detecção de assinaturas existentes
+- [x] Suporte real a múltiplas assinaturas
+- [x] Verificação de integridade incremental
 5. AcroForm e Campos
 ## 5.1 AcroForm e Campos
 

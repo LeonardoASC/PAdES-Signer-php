@@ -81,7 +81,12 @@ final readonly class IncrementalPdfWriter
             . $xrefOffset . "\n"
             . "%%EOF\n";
 
-        return $pdfContent . $body . $xref . $trailer;
+        $updated = $pdfContent . $body . $xref . $trailer;
+
+        (new PdfIncrementalUpdateValidator())
+            ->validateAppendOnly($pdfContent, $updated);
+
+        return $updated;
     }
 
     /**

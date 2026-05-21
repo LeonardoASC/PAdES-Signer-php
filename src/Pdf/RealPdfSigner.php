@@ -49,9 +49,9 @@ final readonly class RealPdfSigner
 
         $signatureObjectNumber = $nextObjectNumber;
         $widgetObjectNumber = $nextObjectNumber + 1;
-        $acroFormObjectNumber = $nextObjectNumber + 2;
+        $nextAvailableObjectNumber = $nextObjectNumber + 2;
         $appearanceObjectNumber = $visibleSignature
-            ? $nextObjectNumber + 3
+            ? $nextAvailableObjectNumber
             : null;
 
         $catalogInspector = new PdfCatalogInspector();
@@ -62,11 +62,38 @@ final readonly class RealPdfSigner
         $catalogBody = $catalogInspector
             ->getCatalogObjectBody($content);
 
-        $updatedCatalog = (new PdfCatalogUpdater())
-            ->addAcroForm(
+        $catalogUpdater = new PdfCatalogUpdater();
+        $acroFormObjectNumber = (new PdfAcroFormInspector())
+            ->getAcroFormObjectNumber($catalogBody);
+
+        $updatedCatalog = $catalogUpdater->ensureEtsiExtension($catalogBody);
+
+        $updatedAcroForm = null;
+
+        if ($acroFormObjectNumber === null) {
+            $acroFormObjectNumber = $nextAvailableObjectNumber;
+            $nextAvailableObjectNumber++;
+
+            if ($appearanceObjectNumber !== null) {
+                $appearanceObjectNumber = $nextAvailableObjectNumber;
+            }
+
+            $updatedCatalog = $catalogUpdater->addAcroForm(
                 catalogBody: $catalogBody,
                 acroFormObjectNumber: $acroFormObjectNumber
             );
+        } else {
+            $acroFormBody = (new PdfStructuralParser())
+                ->parse($content)
+                ->getObject($acroFormObjectNumber)
+                ->body;
+
+            $updatedAcroForm = (new PdfAcroFormUpdater())
+                ->addSignatureField(
+                    acroFormBody: $acroFormBody,
+                    widgetObjectNumber: $widgetObjectNumber
+                );
+        }
 
         $pageInspector = new PdfPageInspector();
 
@@ -99,15 +126,15 @@ final readonly class RealPdfSigner
                     appearanceObjectNumber: $appearanceObjectNumber
                 ),
 
-            $acroFormObjectNumber => (new PdfAcroForm())
-                ->build(
-                    widgetObjectNumber: $widgetObjectNumber
-                ),
-
             $catalogNumber => $updatedCatalog,
 
             $pageNumber => $updatedPage,
         ];
+
+        $objects[$acroFormObjectNumber] = $updatedAcroForm
+            ?? (new PdfAcroForm())->build(
+                widgetObjectNumber: $widgetObjectNumber
+            );
 
         if ($appearanceObjectNumber !== null) {
             $objects[$appearanceObjectNumber] = (new PdfSignatureAppearance())

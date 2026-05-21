@@ -16,7 +16,7 @@ final readonly class PdfCatalogUpdater
             throw new RuntimeException('O Catalog já possui /AcroForm.');
         }
 
-        $catalogBody = $this->addEtsiExtension($catalogBody);
+        $catalogBody = $this->ensureEtsiExtension($catalogBody);
 
         $updated = preg_replace(
             '/>>\s*$/',
@@ -31,7 +31,7 @@ final readonly class PdfCatalogUpdater
         return $updated;
     }
 
-    private function addEtsiExtension(string $catalogBody): string
+    public function ensureEtsiExtension(string $catalogBody): string
     {
         if (str_contains($catalogBody, '/ESIC')) {
             return $catalogBody;
