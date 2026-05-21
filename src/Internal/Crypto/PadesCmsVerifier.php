@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace NihilLabs\Pades\Crypto;
+namespace NihilLabs\Pades\Internal\Crypto;
 
 use RuntimeException;
 
-final readonly class OpenSslBinaryCmsVerifier
+final readonly class PadesCmsVerifier
 {
     public function __construct(
         private ?string $opensslBinary = null
     ) {}
 
-    public function verify(
+    public function verifyByteRangeSignature(
         string $cmsDer,
         string $signedData
     ): bool {

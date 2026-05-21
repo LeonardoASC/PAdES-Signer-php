@@ -5,27 +5,11 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
-use NihilLabs\Pades\Crypto\AdvancedCmsSigner;
-use NihilLabs\Pades\Crypto\CmsSignerInterface;
+use NihilLabs\Pades\Internal\Crypto\PadesCmsSigner;
 use PHPUnit\Framework\TestCase;
 
-final class AdvancedCmsSignerTest extends TestCase
+final class PadesCmsSignerTest extends TestCase
 {
-    public function test_it_implements_cms_signer_interface(): void
-    {
-        $certificate = new PfxCertificate(
-            path: __DIR__ . '/Fixtures/certificate.pfx',
-            password: '123456'
-        );
-
-        $signer = new AdvancedCmsSigner($certificate);
-
-        $this->assertInstanceOf(
-            CmsSignerInterface::class,
-            $signer
-        );
-    }
-
     public function test_it_exposes_certificate(): void
     {
         $certificate = new PfxCertificate(
@@ -33,7 +17,7 @@ final class AdvancedCmsSignerTest extends TestCase
             password: '123456'
         );
 
-        $signer = new AdvancedCmsSigner($certificate);
+        $signer = new PadesCmsSigner($certificate);
 
         $this->assertSame(
             $certificate,
@@ -48,8 +32,8 @@ final class AdvancedCmsSignerTest extends TestCase
             password: '123456'
         );
 
-        $cms = (new AdvancedCmsSigner($certificate))
-            ->signDetachedDer('hello world');
+        $cms = (new PadesCmsSigner($certificate))
+            ->signPdfByteRangeData('hello world');
 
         $this->assertNotEmpty($cms);
 
@@ -76,8 +60,8 @@ final class AdvancedCmsSignerTest extends TestCase
             password: '123456'
         );
 
-        $cms = (new AdvancedCmsSigner($certificate))
-            ->signDetachedDer('hello world');
+        $cms = (new PadesCmsSigner($certificate))
+            ->signPdfByteRangeData('hello world');
 
         $inspection = (new \NihilLabs\Pades\Crypto\PadesBaselineInspector())
             ->inspect($cms);

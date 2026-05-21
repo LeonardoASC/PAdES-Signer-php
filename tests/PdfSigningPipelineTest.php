@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
-use NihilLabs\Pades\Crypto\CmsSigner;
+use NihilLabs\Pades\Internal\Crypto\PadesCmsSigner;
 use NihilLabs\Pades\Pdf\ByteRangeCalculator;
 use NihilLabs\Pades\Pdf\FakePdfBuilder;
 use NihilLabs\Pades\Pdf\PdfByteRangePlaceholder;
@@ -52,8 +52,8 @@ final class PdfSigningPipelineTest extends TestCase
             password: '123456'
         );
 
-        $cms = (new CmsSigner($certificate))
-            ->signDetachedDer($signedData);
+        $cms = (new PadesCmsSigner($certificate))
+            ->signPdfByteRangeData($signedData);
 
         $hexSignature = $contents->encode($cms);
 

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
-use NihilLabs\Pades\Crypto\AdvancedCmsSigner;
+use NihilLabs\Pades\Internal\Crypto\PadesCmsSigner;
 use PHPUnit\Framework\TestCase;
 
-final class AdvancedCmsSignerLtAttributesTest extends TestCase
+final class PadesCmsSignerLtAttributesTest extends TestCase
 {
     public function test_it_does_not_embed_lt_reference_attributes_in_baseline_cms(): void
     {
@@ -17,9 +17,9 @@ final class AdvancedCmsSignerLtAttributesTest extends TestCase
             password: '123456'
         );
 
-        $cms = (new AdvancedCmsSigner(
+        $cms = (new PadesCmsSigner(
             certificate: $certificate
-        ))->signDetachedDer(
+        ))->signPdfByteRangeData(
             'hello world'
         );
 

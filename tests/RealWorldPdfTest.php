@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades\Tests;
 
-use NihilLabs\Pades\Crypto\OpenSslBinaryCmsVerifier;
+use NihilLabs\Pades\Internal\Crypto\PadesCmsVerifier;
 use NihilLabs\Pades\Pdf\ByteRange;
 use NihilLabs\Pades\Pdf\ByteRangeCalculator;
 use NihilLabs\Pades\Pdf\PdfSignatureExtractor;
@@ -54,8 +54,8 @@ final class RealWorldPdfTest extends TestCase
             ->extractBinarySignatureWithoutPadding($pdf);
 
         $this->assertTrue(
-            (new OpenSslBinaryCmsVerifier())
-                ->verify(
+            (new PadesCmsVerifier())
+                ->verifyByteRangeSignature(
                     cmsDer: $cms,
                     signedData: $signedData
                 )

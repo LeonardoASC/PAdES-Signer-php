@@ -7,10 +7,8 @@ namespace NihilLabs\Pades\Pdf;
 use InvalidArgumentException;
 use RuntimeException;
 use NihilLabs\Pades\Certificate\PfxCertificate;
-use NihilLabs\Pades\Crypto\CmsSigner;
-use NihilLabs\Pades\Crypto\AdvancedCmsSigner;
+use NihilLabs\Pades\Internal\Crypto\PadesCmsSigner;
 use NihilLabs\Pades\Crypto\Timestamp\TimestampClientInterface;
-use NihilLabs\Pades\Crypto\Cades\IcpBrasilSignaturePolicy;
 
 final readonly class RealPdfSigner
 {
@@ -22,7 +20,6 @@ final readonly class RealPdfSigner
         ?string $certificatePath = null,
         ?string $certificatePassword = null,
         ?TimestampClientInterface $timestampClient = null,
-        ?IcpBrasilSignaturePolicy $signaturePolicy = null,
         bool $visibleSignature = false,
         array $signatureRect = [48, 48, 547, 96],
         int $signatureFlags = 132,
@@ -124,8 +121,7 @@ final readonly class RealPdfSigner
                 pdfContent: $updated,
                 certificatePath: $certificatePath,
                 certificatePassword: $certificatePassword,
-                timestampClient: $timestampClient,
-                signaturePolicy: $signaturePolicy
+                timestampClient: $timestampClient
             );
         }
 
@@ -184,8 +180,7 @@ final readonly class RealPdfSigner
         string $pdfContent,
         string $certificatePath,
         string $certificatePassword,
-        ?TimestampClientInterface $timestampClient = null,
-        ?IcpBrasilSignaturePolicy $signaturePolicy = null
+        ?TimestampClientInterface $timestampClient = null
     ): string {
         $signaturePlaceholder = new PdfSignaturePlaceholder();
 
@@ -213,11 +208,10 @@ final readonly class RealPdfSigner
             password: $certificatePassword
         );
 
-        $cms = (new AdvancedCmsSigner(
+        $cms = (new PadesCmsSigner(
             certificate: $certificate,
-            timestampClient: $timestampClient,
-            signaturePolicy: $signaturePolicy
-        ))->signDetachedDer(
+            timestampClient: $timestampClient
+        ))->signPdfByteRangeData(
             $signedData
         );
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
-use NihilLabs\Pades\Crypto\AdvancedCmsSigner;
+use NihilLabs\Pades\Internal\Crypto\PadesCmsSigner;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -43,7 +43,7 @@ final class CmsOpenSslStructureComparisonTest extends TestCase
 
         file_put_contents(
             $padesCmsFile,
-            (new AdvancedCmsSigner($certificate))->signDetachedDer($data)
+            (new PadesCmsSigner($certificate))->signPdfByteRangeData($data)
         );
 
         $this->runCommand(

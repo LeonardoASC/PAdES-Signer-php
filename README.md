@@ -6,7 +6,7 @@ PAdES Core is a native PHP library for generating and validating PAdES-compatibl
 
 ## Features
 
-- Native CMS / PKCS#7 detached signature generation
+- Internal CMS generation for PAdES PDF signatures
 - Advanced CMS builder with ASN.1 DER encoding
 - SigningCertificateV2 support
 - Incremental PDF updates
@@ -16,7 +16,7 @@ PAdES Core is a native PHP library for generating and validating PAdES-compatibl
 - CMS extraction utilities
 - OpenSSL verification compatibility
 - PAdES-B-B experimental support
-- Detached binary signature verification
+- PAdES PDF signature extraction utilities
 
 ---
 

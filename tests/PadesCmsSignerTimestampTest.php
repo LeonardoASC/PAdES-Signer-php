@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
-use NihilLabs\Pades\Crypto\AdvancedCmsSigner;
+use NihilLabs\Pades\Internal\Crypto\PadesCmsSigner;
 use NihilLabs\Pades\Crypto\Timestamp\TimestampClientInterface;
 use PHPUnit\Framework\TestCase;
 
-final class AdvancedCmsSignerTimestampTest extends TestCase
+final class PadesCmsSignerTimestampTest extends TestCase
 {
     public function test_it_builds_cms_with_timestamp_attribute(): void
     {
@@ -36,10 +36,10 @@ final class AdvancedCmsSignerTimestampTest extends TestCase
             password: '123456'
         );
 
-        $cms = (new AdvancedCmsSigner(
+        $cms = (new PadesCmsSigner(
             certificate: $certificate,
             timestampClient: $client
-        ))->signDetachedDer('hello world');
+        ))->signPdfByteRangeData('hello world');
 
         $this->assertStringContainsString(
             hex2bin('2a864886f70d010910020e'),

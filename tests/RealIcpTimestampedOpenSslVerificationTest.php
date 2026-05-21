@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades\Tests;
 
-use NihilLabs\Pades\Crypto\OpenSslBinaryCmsVerifier;
+use NihilLabs\Pades\Internal\Crypto\PadesCmsVerifier;
 use NihilLabs\Pades\Tests\Support\RealIcpSignedPdfFixture;
 use NihilLabs\Pades\Tests\Support\SignedPdfFixture;
 use PHPUnit\Framework\TestCase;
@@ -26,8 +26,8 @@ final class RealIcpTimestampedOpenSslVerificationTest extends TestCase
         );
 
         $this->assertTrue(
-            (new OpenSslBinaryCmsVerifier())
-                ->verify(
+            (new PadesCmsVerifier())
+                ->verifyByteRangeSignature(
                     cmsDer: $parts['cms'],
                     signedData: $parts['signedData']
                 )

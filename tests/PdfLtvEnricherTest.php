@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades\Tests;
 
-use NihilLabs\Pades\Crypto\OpenSslBinaryCmsVerifier;
+use NihilLabs\Pades\Internal\Crypto\PadesCmsVerifier;
 use NihilLabs\Pades\Crypto\Validation\LtvValidationMaterial;
 use NihilLabs\Pades\Pdf\IncrementalPdfWriter;
 use NihilLabs\Pades\Pdf\PdfByteRangeValidator;
@@ -67,8 +67,8 @@ final class PdfLtvEnricherTest extends TestCase
         $parts = SignedPdfFixture::detachedCmsParts($enrichedPdf);
 
         $this->assertTrue(
-            (new OpenSslBinaryCmsVerifier())
-                ->verify(
+            (new PadesCmsVerifier())
+                ->verifyByteRangeSignature(
                     cmsDer: $parts['cms'],
                     signedData: $parts['signedData']
                 )
