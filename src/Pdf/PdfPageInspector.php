@@ -10,19 +10,24 @@ final readonly class PdfPageInspector
 {
     public function getFirstPageObjectNumber(string $pdfContent): int
     {
-        if (! preg_match('/(\d+)\s+0\s+obj\s*<<(?:(?!endobj).)*\/Type\s*\/Page\b(?:(?!endobj).)*>>\s*endobj/s', $pdfContent, $matches)) {
-            throw new RuntimeException('Objeto /Page não encontrado.');
-        }
-
-        return (int) $matches[1];
+        return $this->firstPageObject($pdfContent)->number;
     }
 
     public function getFirstPageObjectBody(string $pdfContent): string
     {
-        if (! preg_match('/\d+\s+0\s+obj\s*(<<(?:(?!endobj).)*\/Type\s*\/Page\b(?:(?!endobj).)*>>)\s*endobj/s', $pdfContent, $matches)) {
-            throw new RuntimeException('Corpo do objeto /Page não encontrado.');
+        return $this->firstPageObject($pdfContent)->body;
+    }
+
+    private function firstPageObject(string $pdfContent): PdfIndirectObject
+    {
+        $structure = (new PdfStructuralParser())->parse($pdfContent);
+
+        foreach ($structure->objects as $object) {
+            if (preg_match('/\/Type\s*\/Page\b/s', $object->body) === 1) {
+                return $object;
+            }
         }
 
-        return $matches[1];
+        throw new RuntimeException('Objeto /Page nao encontrado.');
     }
 }

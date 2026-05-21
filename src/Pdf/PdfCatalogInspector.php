@@ -10,53 +10,40 @@ final readonly class PdfCatalogInspector
 {
     public function getCatalogObjectNumber(string $pdfContent): int
     {
-        $matches = $this->catalogMatches($pdfContent);
-        $objectNumbers = array_column($matches, 'objectNumber');
-
-        return (int) end($objectNumbers);
+        return $this->latestCatalogObject($pdfContent)->number;
     }
 
     public function getCatalogObjectBody(string $pdfContent): string
     {
-        $matches = $this->catalogMatches($pdfContent);
-        $bodies = array_column($matches, 'body');
-
-        return (string) end($bodies);
+        return $this->latestCatalogObject($pdfContent)->body;
     }
 
-    /**
-     * @return array<int, array{objectNumber:int, body:string}>
-     */
-    private function catalogMatches(string $pdfContent): array
+    private function latestCatalogObject(string $pdfContent): PdfIndirectObject
     {
-        if (! preg_match_all(
-            '/(\d+)\s+0\s+obj\s*(.*?)\s*endobj/s',
-            $pdfContent,
-            $matches,
-            PREG_SET_ORDER
-        )) {
-            throw new RuntimeException('Objeto /Catalog nao encontrado.');
+        $structure = (new PdfStructuralParser())->parse($pdfContent);
+
+        try {
+            $rootReference = $structure->latestTrailer()->getReference('Root');
+        } catch (RuntimeException) {
+            $rootReference = null;
         }
 
-        $catalogMatches = [];
+        if ($rootReference !== null) {
+            [$objectNumber] = array_map('intval', explode(' ', $rootReference));
 
-        foreach ($matches as $match) {
-            $body = $match[2];
-
-            if (! str_contains($body, '/Type') || ! str_contains($body, '/Catalog')) {
-                continue;
+            try {
+                return $structure->getObject($objectNumber);
+            } catch (RuntimeException) {
+                // Minimal fixtures may omit a valid xref/trailer root target.
             }
-
-            $catalogMatches[] = [
-                'objectNumber' => (int) $match[1],
-                'body' => $body,
-            ];
         }
 
-        if ($catalogMatches === []) {
-            throw new RuntimeException('Objeto /Catalog nao encontrado.');
+        foreach (array_reverse($structure->objects, preserve_keys: true) as $object) {
+            if (str_contains($object->body, '/Type') && str_contains($object->body, '/Catalog')) {
+                return $object;
+            }
         }
 
-        return $catalogMatches;
+        throw new RuntimeException('Objeto /Catalog nao encontrado.');
     }
 }

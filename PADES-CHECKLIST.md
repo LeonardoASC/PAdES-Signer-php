@@ -86,16 +86,16 @@ SEM isso o projeto quebra em PDFs reais.
 
 ## 2.1 Estrutura PDF Base
 
-- [ ] Parser PDF estrutural
-- [ ] Parser incremental próprio
-- [ ] Suporte a xref table
-- [ ] Leitura robusta de trailer
-- [ ] Resolução indireta de objetos PDF
-- [ ] Validação completa de xref
-- [ ] Validação completa de trailer
-- [ ] Proteção contra corrupção estrutural do PDF
-- [ ] Preservação binária do conteúdo não assinado
-- [ ] Normalização de line endings do PDF
+- [x] Parser PDF estrutural
+- [x] Parser incremental próprio
+- [x] Suporte a xref table
+- [x] Leitura robusta de trailer
+- [x] Resolução indireta de objetos PDF
+- [x] Validação completa de xref
+- [x] Validação completa de trailer
+- [x] Proteção contra corrupção estrutural do PDF
+- [x] Preservação binária do conteúdo não assinado
+- [x] Normalização de line endings do PDF
 3. Compatibilidade PDF Moderna
 ## 3.1 PDFs Modernos
 

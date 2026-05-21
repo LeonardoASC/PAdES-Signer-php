@@ -32,11 +32,16 @@ final readonly class IncrementalPdfWriter
             throw new RuntimeException('Nenhum objeto informado para incremental update.');
         }
 
+        $structure = (new PdfStructuralParser())->parse($pdfContent);
+
+        if ($structure->xrefTables !== []) {
+            $structure = (new PdfStructureValidator())->validate($pdfContent);
+        }
+        $latestTrailer = $structure->latestTrailer();
         $originalLength = strlen($pdfContent);
-        $previousStartXref = $this->getLastStartXref($pdfContent);
         $rootReference = $this->getRootReference($pdfContent);
-        $infoReference = $this->getInfoReference($pdfContent);
-        $documentId = $this->getDocumentId($pdfContent);
+        $infoReference = $latestTrailer->getReference('Info');
+        $documentId = $latestTrailer->firstDocumentIdHex();
 
         $body = '';
         $offsets = [];
@@ -51,12 +56,11 @@ final readonly class IncrementalPdfWriter
         }
 
         $xrefOffset = $originalLength + strlen($body);
-
-        ksort($offsets);
-
         $xref = $this->buildXref($offsets);
-
-        $size = max(array_keys($objects)) + 1;
+        $highestExistingObject = $structure->objects === []
+            ? 0
+            : $structure->highestObjectNumber();
+        $size = max(max(array_keys($objects)), $highestExistingObject) + 1;
 
         $trailer = "trailer\n"
             . "<<\n"
@@ -71,7 +75,7 @@ final readonly class IncrementalPdfWriter
             $trailer .= "/ID [ <{$documentId}> <" . bin2hex(random_bytes(16)) . "> ]\n";
         }
 
-        $trailer .= "/Prev {$previousStartXref}\n"
+        $trailer .= "/Prev {$latestTrailer->startXref}\n"
             . ">>\n"
             . "startxref\n"
             . $xrefOffset . "\n"
@@ -98,11 +102,7 @@ final readonly class IncrementalPdfWriter
                 && $previousObjectNumber !== null
                 && $objectNumber !== $previousObjectNumber + 1
             ) {
-                $xref .= $this->formatXrefSection(
-                    $sectionStart,
-                    $sectionOffsets
-                );
-
+                $xref .= $this->formatXrefSection($sectionStart, $sectionOffsets);
                 $sectionStart = null;
                 $sectionOffsets = [];
             }
@@ -116,10 +116,7 @@ final readonly class IncrementalPdfWriter
         }
 
         if ($sectionStart !== null) {
-            $xref .= $this->formatXrefSection(
-                $sectionStart,
-                $sectionOffsets
-            );
+            $xref .= $this->formatXrefSection($sectionStart, $sectionOffsets);
         }
 
         return $xref;
@@ -143,8 +140,14 @@ final readonly class IncrementalPdfWriter
 
     public function getLastStartXref(string $pdfContent): int
     {
+        $structure = (new PdfStructuralParser())->parse($pdfContent);
+
+        if ($structure->trailers !== []) {
+            return $structure->latestTrailer()->startXref;
+        }
+
         if (! preg_match_all('/startxref\s+(\d+)/', $pdfContent, $matches)) {
-            throw new RuntimeException('startxref não encontrado no PDF.');
+            throw new RuntimeException('startxref nao encontrado no PDF.');
         }
 
         return (int) end($matches[1]);
@@ -152,34 +155,15 @@ final readonly class IncrementalPdfWriter
 
     public function getRootReference(string $pdfContent): string
     {
-        if (! preg_match('/\/Root\s+(\d+\s+\d+\s+R)/', $pdfContent, $matches)) {
-            throw new RuntimeException('/Root não encontrado no trailer do PDF.');
+        $root = (new PdfStructuralParser())
+            ->parse($pdfContent)
+            ->latestTrailer()
+            ->getReference('Root');
+
+        if ($root === null) {
+            throw new RuntimeException('/Root nao encontrado no trailer do PDF.');
         }
 
-        return $matches[1];
-    }
-
-    private function getInfoReference(string $pdfContent): ?string
-    {
-        if (! preg_match_all('/\/Info\s+(\d+\s+\d+\s+R)/', $pdfContent, $matches)) {
-            return null;
-        }
-
-        return end($matches[1]) ?: null;
-    }
-
-    private function getDocumentId(string $pdfContent): ?string
-    {
-        if (! preg_match_all('/\/ID\s*\[\s*<([0-9A-Fa-f]+)>/', $pdfContent, $matches)) {
-            return null;
-        }
-
-        $id = end($matches[1]);
-
-        if (! is_string($id) || $id === '') {
-            return null;
-        }
-
-        return strtolower($id);
+        return $root;
     }
 }
