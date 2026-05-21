@@ -5,24 +5,38 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Internal\Crypto;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
-use NihilLabs\Pades\Crypto\Cades\ContentInfoBuilder;
-use NihilLabs\Pades\Crypto\Cades\SignedAttributesBuilder;
-use NihilLabs\Pades\Crypto\Cades\SignedAttributesSigner;
-use NihilLabs\Pades\Crypto\Cades\SignedDataBuilder;
-use NihilLabs\Pades\Crypto\Cades\SignerInfoBuilder;
+use NihilLabs\Pades\Internal\Crypto\Cades\ContentInfoBuilder;
+use NihilLabs\Pades\Internal\Crypto\Cades\SignedAttributesBuilder;
+use NihilLabs\Pades\Internal\Crypto\Cades\SignedDataBuilder;
+use NihilLabs\Pades\Internal\Crypto\Cades\SignerInfoBuilder;
 use NihilLabs\Pades\Crypto\Asn1\Der;
-use NihilLabs\Pades\Crypto\Cades\SignatureTimestampTokenAttribute;
-use NihilLabs\Pades\Crypto\Cades\UnsignedAttributesBuilder;
+use NihilLabs\Pades\Internal\Crypto\Cades\SignatureTimestampTokenAttribute;
+use NihilLabs\Pades\Internal\Crypto\Cades\UnsignedAttributesBuilder;
 use NihilLabs\Pades\Crypto\Timestamp\Rfc3161TimestampRequest;
-use NihilLabs\Pades\Crypto\Timestamp\TimestampClientInterface;
 use NihilLabs\Pades\Crypto\Timestamp\TimestampResponseParser;
+use NihilLabs\Pades\Signing\OpenSslSignerProvider;
+use NihilLabs\Pades\Signing\PfxSignatureCredential;
+use NihilLabs\Pades\Signing\SignatureCredentialInterface;
+use NihilLabs\Pades\Signing\SignerProviderInterface;
+use NihilLabs\Pades\Timestamp\TimestampProviderInterface;
 
 final readonly class PadesCmsSigner
 {
+    private SignatureCredentialInterface $signatureCredential;
+
+    private SignerProviderInterface $signerProvider;
+
     public function __construct(
-        private PfxCertificate $certificate,
-        private ?TimestampClientInterface $timestampClient = null
-    ) {}
+        PfxCertificate|SignatureCredentialInterface $certificate,
+        private ?TimestampProviderInterface $timestampClient = null,
+        ?SignerProviderInterface $signerProvider = null
+    ) {
+        $this->signatureCredential = $certificate instanceof PfxCertificate
+            ? new PfxSignatureCredential($certificate)
+            : $certificate;
+
+        $this->signerProvider = $signerProvider ?? new OpenSslSignerProvider();
+    }
 
     public function signPdfByteRangeData(
         string $data
@@ -30,7 +44,7 @@ final readonly class PadesCmsSigner
         $signedAttributesForSignature = (new SignedAttributesBuilder())
             ->build(
                 data: $data,
-                certificatePem: $this->certificate->getPublicCertificate()
+                certificatePem: $this->signatureCredential->getCertificatePem()
             );
 
         $signedAttributesForCms = Der::contextSpecificImplicitFromEncoded(
@@ -38,9 +52,10 @@ final readonly class PadesCmsSigner
             $signedAttributesForSignature
         );
 
-        $encryptedDigest = (new SignedAttributesSigner(
-            $this->certificate
-        ))->sign($signedAttributesForSignature);
+        $encryptedDigest = $this->signerProvider->sign(
+            data: $signedAttributesForSignature,
+            credential: $this->signatureCredential
+        );
 
         $unsignedAttributes = [];
 
@@ -64,7 +79,7 @@ final readonly class PadesCmsSigner
 
         $signerInfo = (new SignerInfoBuilder())
             ->build(
-                certificate: $this->certificate,
+                certificate: $this->signatureCredential,
                 signedAttributesForCms: $signedAttributesForCms,
                 encryptedDigest: $encryptedDigest,
                 unsignedAttributesForCms: $unsignedAttributesForCms
@@ -72,7 +87,7 @@ final readonly class PadesCmsSigner
 
         $signedData = (new SignedDataBuilder())
             ->build(
-                certificate: $this->certificate,
+                certificate: $this->signatureCredential,
                 signerInfo: $signerInfo
             );
 
@@ -83,6 +98,12 @@ final readonly class PadesCmsSigner
 
     public function getCertificate(): PfxCertificate
     {
-        return $this->certificate;
+        if (! $this->signatureCredential instanceof PfxSignatureCredential) {
+            throw new \RuntimeException(
+                'A credencial configurada nao e um certificado PFX local.'
+            );
+        }
+
+        return $this->signatureCredential->getPfxCertificate();
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades\Tests;
 
-use NihilLabs\Pades\Crypto\Cades\SignatureTimestampTokenAttribute;
+use NihilLabs\Pades\Internal\Crypto\Cades\SignatureTimestampTokenAttribute;
 use NihilLabs\Pades\Crypto\Timestamp\TimestampResponseParser;
 use PHPUnit\Framework\TestCase;
 

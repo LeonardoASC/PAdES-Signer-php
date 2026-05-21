@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades\Tests;
 
-use NihilLabs\Pades\Crypto\Cades\RevocationRefsAttribute;
+use NihilLabs\Pades\Internal\Crypto\Cades\RevocationRefsAttribute;
 use PHPUnit\Framework\TestCase;
 
 final class RevocationRefsAttributeTest extends TestCase

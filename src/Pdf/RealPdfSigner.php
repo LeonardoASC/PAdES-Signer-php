@@ -6,9 +6,11 @@ namespace NihilLabs\Pades\Pdf;
 
 use InvalidArgumentException;
 use RuntimeException;
-use NihilLabs\Pades\Certificate\PfxCertificate;
 use NihilLabs\Pades\Internal\Crypto\PadesCmsSigner;
-use NihilLabs\Pades\Crypto\Timestamp\TimestampClientInterface;
+use NihilLabs\Pades\Signing\PfxSignatureCredential;
+use NihilLabs\Pades\Signing\SignatureCredentialInterface;
+use NihilLabs\Pades\Signing\SignerProviderInterface;
+use NihilLabs\Pades\Timestamp\TimestampProviderInterface;
 
 final readonly class RealPdfSigner
 {
@@ -19,14 +21,16 @@ final readonly class RealPdfSigner
         string $outputPdf,
         ?string $certificatePath = null,
         ?string $certificatePassword = null,
-        ?TimestampClientInterface $timestampClient = null,
+        ?TimestampProviderInterface $timestampClient = null,
         bool $visibleSignature = false,
         array $signatureRect = [48, 48, 547, 96],
         int $signatureFlags = 132,
         string $signatureName = 'PAdES Core',
         string $signatureReason = 'Document signed digitally',
         ?string $signatureLocation = null,
-        ?string $signatureContactInfo = null
+        ?string $signatureContactInfo = null,
+        ?SignatureCredentialInterface $signatureCredential = null,
+        ?SignerProviderInterface $signerProvider = null
     ): void {
         if (! file_exists($inputPdf)) {
             throw new InvalidArgumentException("PDF de entrada não encontrado: {$inputPdf}");
@@ -116,12 +120,19 @@ final readonly class RealPdfSigner
                 objects: $objects
             );
 
-        if ($certificatePath !== null && $certificatePassword !== null) {
+        if ($signatureCredential === null && $certificatePath !== null && $certificatePassword !== null) {
+            $signatureCredential = new PfxSignatureCredential(
+                pathOrCertificate: $certificatePath,
+                password: $certificatePassword
+            );
+        }
+
+        if ($signatureCredential !== null) {
             $updated = $this->applySignature(
                 pdfContent: $updated,
-                certificatePath: $certificatePath,
-                certificatePassword: $certificatePassword,
-                timestampClient: $timestampClient
+                signatureCredential: $signatureCredential,
+                timestampClient: $timestampClient,
+                signerProvider: $signerProvider
             );
         }
 
@@ -178,9 +189,9 @@ final readonly class RealPdfSigner
 
     private function applySignature(
         string $pdfContent,
-        string $certificatePath,
-        string $certificatePassword,
-        ?TimestampClientInterface $timestampClient = null
+        SignatureCredentialInterface $signatureCredential,
+        ?TimestampProviderInterface $timestampClient = null,
+        ?SignerProviderInterface $signerProvider = null
     ): string {
         $signaturePlaceholder = new PdfSignaturePlaceholder();
 
@@ -202,15 +213,10 @@ final readonly class RealPdfSigner
             $byteRange
         );
 
-
-        $certificate = new PfxCertificate(
-            path: $certificatePath,
-            password: $certificatePassword
-        );
-
         $cms = (new PadesCmsSigner(
-            certificate: $certificate,
-            timestampClient: $timestampClient
+            certificate: $signatureCredential,
+            timestampClient: $timestampClient,
+            signerProvider: $signerProvider
         ))->signPdfByteRangeData(
             $signedData
         );

@@ -2,21 +2,25 @@
 
 declare(strict_types=1);
 
-namespace NihilLabs\Pades\Crypto\Cades;
+namespace NihilLabs\Pades\Internal\Crypto\Cades;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
 use NihilLabs\Pades\Crypto\Asn1\Der;
+use NihilLabs\Pades\Signing\PfxSignatureCredential;
+use NihilLabs\Pades\Signing\SignatureCredentialInterface;
 
 final readonly class SignerInfoBuilder
 {
     public function build(
-        PfxCertificate $certificate,
+        PfxCertificate|SignatureCredentialInterface $certificate,
         string $signedAttributesForCms,
         string $encryptedDigest,
         ?string $unsignedAttributesForCms = null
     ): string {
+        $credential = $this->normalizeCredential($certificate);
+
         $content = Der::integer(1)
-            . $this->sid($certificate)
+            . $this->sid($credential)
             . $this->digestAlgorithm()
             . $signedAttributesForCms
             . $this->signatureAlgorithm()
@@ -29,10 +33,18 @@ final readonly class SignerInfoBuilder
         return Der::sequence($content);
     }
 
-    private function sid(PfxCertificate $certificate): string
+    private function sid(SignatureCredentialInterface $credential): string
     {
         return (new IssuerAndSerialNumber())
-            ->build($certificate);
+            ->build($credential->getCertificatePem());
+    }
+
+    private function normalizeCredential(
+        PfxCertificate|SignatureCredentialInterface $credential
+    ): SignatureCredentialInterface {
+        return $credential instanceof PfxCertificate
+            ? new PfxSignatureCredential($credential)
+            : $credential;
     }
 
     private function digestAlgorithm(): string

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades\Tests;
 
-use NihilLabs\Pades\Crypto\PadesBaselineInspector;
+use NihilLabs\Pades\Validation\PadesBaselineInspector;
 use NihilLabs\Pades\Pdf\PdfSignatureExtractor;
 use NihilLabs\Pades\Tests\Support\SignedPdfFixture;
 use PHPUnit\Framework\TestCase;

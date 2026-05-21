@@ -7,13 +7,12 @@ PAdES Core is a native PHP library for generating and validating PAdES-compatibl
 ## Features
 
 - Internal CMS generation for PAdES PDF signatures
-- Advanced CMS builder with ASN.1 DER encoding
+- Public PAdES-first signing API
 - SigningCertificateV2 support
 - Incremental PDF updates
 - PDF signature dictionary generation
 - ByteRange calculation and validation
 - AcroForm and Widget generation
-- CMS extraction utilities
 - OpenSSL verification compatibility
 - PAdES-B-B experimental support
 - PAdES PDF signature extraction utilities
@@ -25,10 +24,7 @@ PAdES Core is a native PHP library for generating and validating PAdES-compatibl
 The current implementation includes:
 
 - Incremental PDF signing
-- Detached CMS signatures
-- CMS SignedData generation
-- SignerInfo generation
-- SignedAttributes generation
+- Detached CMS signatures generated internally for PAdES
 - SigningCertificateV2 attribute
 - IssuerAndSerialNumber generation
 - DER ASN.1 encoder
@@ -56,11 +52,9 @@ composer require nihillabs/pades-core
 ## Basic Usage
 
 ```php
-use NihilLabs\Pades\Pdf\RealPdfSigner;
+use NihilLabs\Pades\Pades;
 
-$signer = new RealPdfSigner();
-
-$signer->sign(
+Pades::sign(
     inputPdf: 'document.pdf',
     outputPdf: 'document-signed.pdf',
     certificatePath: 'certificate.pfx',
@@ -78,16 +72,16 @@ vendor/bin/phpunit
 
 ---
 
-## OpenSSL CMS Verification
+## OpenSSL Verification
 
-Extract the CMS signature and signed content:
+For development and interoperability checks, extract the internal CMS signature and signed PDF byte range:
 
 ```bash
 php extract.php
 php extract-signed-data.php
 ```
 
-Verify CMS integrity:
+Verify the internal CMS integrity:
 
 ```bash
 openssl cms -verify -binary -inform DER \

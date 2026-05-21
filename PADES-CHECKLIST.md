@@ -1,5 +1,10 @@
-# Checklist PAdES
+1. Fundação Arquitetural
+1.1 API Pública PAdES
 
+Essas definições vêm primeiro porque impactam TODO o projeto.
+
+# Checklist PAdES
+O QUE JA FOI FEITO.
 ## Core PAdES PDF
 
 - [x] Assinatura PDF-first
@@ -59,63 +64,69 @@
 - [x] Testes CMS internos
 - [x] Testes de assinatura PDF real
 
----
+O QUE FAZER A PARTIR DE AGORA.
 
-# Falta Para Biblioteca PAdES Forte
+## 1.1 API Pública PAdES
 
-## API Pública PAdES
+- [x] API pública exclusivamente PAdES
+- [x] Remover CAdES standalone da API pública
+- [x] Mover CMS para namespace interno
+- [x] Remover ICP-Brasil do core
+- [x] Remover políticas nacionais do core
+- [x] Separar engine PDF da engine criptográfica
+- [x] Abstração de signer provider
+- [x] Interface de assinatura desacoplada
+- [x] Interface de timestamp desacoplada
+- [x] Interface de trust validation desacoplada
+- [x] Credencial abstrata de assinatura
+- [x] Signer provider plugável
+2. Engine PDF Estrutural
 
-- [ ] API pública exclusivamente PAdES
-- [ ] Remover CAdES standalone da API pública
-- [ ] Mover CMS para namespace interno
-- [ ] Remover ICP-Brasil do core
-- [ ] Remover políticas nacionais do core
-- [ ] Separar engine PDF da engine criptográfica
-- [ ] Abstração de signer provider
-- [ ] Interface de assinatura desacoplada
-- [ ] Interface de timestamp desacoplada
-- [ ] Interface de trust validation desacoplada
+SEM isso o projeto quebra em PDFs reais.
 
-## Perfis PAdES
-
-- [ ] Perfis formais PAdES Baseline
-- [ ] Perfil PAdES-B-B completo
-- [ ] Perfil PAdES-B-T completo
-- [ ] Perfil PAdES-B-LT completo
-- [ ] Perfil PAdES-B-LTA completo
-- [ ] Mapeamento ETSI EN 319 142
-- [ ] Verificação formal de conformidade ETSI
-
-## Estrutura PDF Robusta
+## 2.1 Estrutura PDF Base
 
 - [ ] Parser PDF estrutural
 - [ ] Parser incremental próprio
 - [ ] Suporte a xref table
-- [ ] Suporte a xref stream
-- [ ] Suporte a object streams
-- [ ] Suporte a PDFs linearizados
 - [ ] Leitura robusta de trailer
 - [ ] Resolução indireta de objetos PDF
-- [ ] Merge seguro de `/Fields`
-- [ ] Merge seguro de `/Annots`
-- [ ] Merge seguro de `/Extensions`
-- [ ] Preservação robusta de revisões
 - [ ] Validação completa de xref
 - [ ] Validação completa de trailer
 - [ ] Proteção contra corrupção estrutural do PDF
-- [ ] Suporte real a múltiplas assinaturas
+- [ ] Preservação binária do conteúdo não assinado
+- [ ] Normalização de line endings do PDF
+3. Compatibilidade PDF Moderna
+## 3.1 PDFs Modernos
+
+- [ ] Suporte a xref stream
+- [ ] Suporte a object streams
+- [ ] Suporte a PDFs linearizados
+- [ ] Suporte a PDFs sem AcroForm
+4. Incremental Update Real
+
+Essa é uma das partes mais importantes do PAdES.
+
+## 4.1 Incremental Update Robusto
+
+- [ ] Preservação robusta de revisões
 - [ ] Append mode rigoroso
 - [ ] Assinar PDFs já assinados
 - [ ] Detecção de assinaturas existentes
+- [ ] Suporte real a múltiplas assinaturas
+- [ ] Verificação de integridade incremental
+5. AcroForm e Campos
+## 5.1 AcroForm e Campos
+
+- [ ] Merge seguro de `/Fields`
+- [ ] Merge seguro de `/Annots`
+- [ ] Merge seguro de `/Extensions`
 - [ ] Campos de assinatura nomeáveis
 - [ ] Detecção de campos de assinatura vazios
 - [ ] Assinar campo existente
 - [ ] Criação automática de campo de assinatura
-- [ ] Suporte a PDFs sem AcroForm
-- [ ] Normalização de line endings do PDF
-- [ ] Preservação binária do conteúdo não assinado
-
-## Assinaturas Avançadas PDF/PAdES
+6. Assinaturas Avançadas PDF
+## 6.1 Assinaturas PDF Avançadas
 
 - [ ] Certification signature
 - [ ] Approval signature
@@ -127,42 +138,8 @@
 - [ ] `/TransformParams`
 - [ ] Controle de permissões pós-assinatura
 - [ ] Travamento de campos após assinatura
-
-## Timestamp / LTV / LTA
-
-- [ ] PDF DocTimeStamp
-- [ ] Timestamp de documento para LTA
-- [ ] Renovação de evidências criptográficas
-- [ ] Validação RFC 3161 completa
-- [ ] Validação de cadeia TSA
-- [ ] Validação de política TSA
-- [ ] DSS completo
-- [ ] VRI completo
-- [ ] Hash VRI conforme perfil aplicável
-- [ ] Cadeia completa no DSS
-- [ ] OCSP completo no DSS
-- [ ] CRL completo no DSS
-- [ ] Inclusão automática de evidências LTV
-- [ ] Rebuild de DSS incremental
-- [ ] Validação offline futura
-- [ ] Estratégia de preservação criptográfica
-- [ ] Suporte a archival timestamp
-
-## Credenciais de Assinatura
-
-- [ ] Credencial abstrata de assinatura
-- [ ] Signer provider plugável
-- [ ] Suporte a arquivo PFX/P12
-- [ ] Suporte a PEM
-- [ ] Suporte a HSM
-- [ ] Suporte a PKCS#11
-- [ ] Suporte a smartcard
-- [ ] Suporte a cloud KMS
-- [ ] Suporte a remote signing
-- [ ] Callback de assinatura externa
-- [ ] Assinatura desacoplada do storage da chave privada
-
-## Algoritmos
+7. Algoritmos Criptográficos
+## 7.1 Algoritmos
 
 - [ ] Algoritmos configuráveis
 - [ ] SHA-384
@@ -173,38 +150,90 @@
 - [ ] Negotiation de algoritmo
 - [ ] Rejeição de algoritmos inseguros
 - [ ] Política mínima de hash
+8. Credenciais de Assinatura
+## 8.1 Credenciais
 
-## Cadeia e Certificados
+- [ ] Suporte a arquivo PFX/P12
+- [ ] Suporte a PEM
+- [ ] Suporte a HSM
+- [ ] Suporte a PKCS#11
+- [ ] Suporte a smartcard
+- [ ] Suporte a cloud KMS
+- [ ] Suporte a remote signing
+- [ ] Callback de assinatura externa
+- [ ] Assinatura desacoplada do storage da chave privada
+9. Cadeia e Certificados
+## 9.1 Cadeia X.509
 
 - [ ] Trust store plugável
 - [ ] Chain validator plugável
 - [ ] Revocation provider plugável
+- [ ] Construção de cadeia X.509
+- [ ] Suporte a múltiplas trust chains
+- [ ] Suporte a AIA fetching
+- [ ] Cache de OCSP/CRL
+10. Validação de Certificados
+## 10.1 Validação Criptográfica
+
 - [ ] Validação de certificado do signatário
 - [ ] Validação de key usage
 - [ ] Validação de extended key usage
 - [ ] Validação de expiração
 - [ ] Validação temporal por signing time
 - [ ] Validação temporal por timestamp
-- [ ] Construção de cadeia X.509
-- [ ] Cache de OCSP/CRL
-- [ ] Suporte a AIA fetching
-- [ ] Suporte a múltiplas trust chains
+11. Timestamp RFC 3161
+## 11.1 Timestamp
 
-## Validador PAdES
+- [ ] Validação RFC 3161 completa
+- [ ] Validação de cadeia TSA
+- [ ] Validação de política TSA
+- [ ] PDF DocTimeStamp
+12. PAdES-B-B
 
+Primeiro perfil ETSI formal.
+
+## 12.1 PAdES-B-B
+
+- [ ] Perfis formais PAdES Baseline
+- [ ] Perfil PAdES-B-B completo
 - [ ] Relatório PAdES por perfil
-- [ ] Relatório ETSI detalhado
-- [ ] Relatório de integridade PDF
-- [ ] Relatório de cadeia criptográfica
 - [ ] Validador PAdES-B-B
-- [ ] Validador PAdES-B-T
-- [ ] Validador PAdES-B-LT
-- [ ] Validador PAdES-B-LTA
-- [ ] Detecção de alteração pós-assinatura
-- [ ] Verificação de cobertura ByteRange
-- [ ] Verificação de integridade incremental
+13. PAdES-B-T
+## 13.1 PAdES-B-T
 
-## Interoperabilidade
+- [ ] Perfil PAdES-B-T completo
+- [ ] Validador PAdES-B-T
+14. DSS / VRI / LT
+## 14.1 PAdES-LT
+
+- [ ] DSS completo
+- [ ] VRI completo
+- [ ] Hash VRI conforme perfil aplicável
+- [ ] Cadeia completa no DSS
+- [ ] OCSP completo no DSS
+- [ ] CRL completo no DSS
+- [ ] Inclusão automática de evidências LTV
+- [ ] Rebuild de DSS incremental
+- [ ] Validação offline futura
+- [ ] Perfil PAdES-B-LT completo
+- [ ] Validador PAdES-B-LT
+15. LTA
+
+ÚLTIMA etapa.
+
+## 15.1 PAdES-LTA
+
+- [ ] Timestamp de documento para LTA
+- [ ] Renovação de evidências criptográficas
+- [ ] Estratégia de preservação criptográfica
+- [ ] Suporte a archival timestamp
+- [ ] Perfil PAdES-B-LTA completo
+- [ ] Validador PAdES-B-LTA
+16. Interoperabilidade
+
+Somente depois do core estar estável.
+
+## 16.1 Interoperabilidade
 
 - [ ] Testes com Adobe Acrobat
 - [ ] Testes com Adobe Reader
@@ -216,20 +245,23 @@
 - [ ] PDFs de conformidade ETSI
 - [ ] Compatibilidade Windows Preview
 - [ ] Compatibilidade macOS Preview
-
-## Performance e Segurança
+17. Segurança e Performance
+## 17.1 Segurança
 
 - [ ] Streaming de PDFs grandes
 - [ ] Assinatura sem carregar PDF inteiro em memória
 - [ ] Proteção contra malformed PDFs
 - [ ] Proteção contra object injection
 - [ ] Proteção contra xref corruption
+- [ ] Hardenização ASN.1 parser
 - [ ] Limites de memória configuráveis
 - [ ] Limites de tamanho configuráveis
 - [ ] Timeout configurável para TSA/OCSP
-- [ ] Hardenização ASN.1 parser
+18. Documentação e Compliance
 
-## Documentação
+ÚLTIMA camada.
+
+## 18.1 Documentação
 
 - [ ] Documentação de API PAdES
 - [ ] Documentação arquitetural
@@ -238,26 +270,10 @@
 - [ ] Guia de timestamp
 - [ ] Guia de LTV/LTA
 - [ ] Guia de signer providers
+- [ ] Mapeamento ETSI EN 319 142
+- [ ] Verificação formal de conformidade ETSI
 - [ ] Matriz de conformidade ETSI EN 319 142
 - [ ] Matriz de conformidade ISO 32000
-
----
-
-# Remover do Escopo
-
-- [x] CAdES standalone
-- [x] API para gerar `.p7s`
-- [x] API para gerar `.p7m`
-- [x] Assinatura detached fora do PDF como produto final
-- [x] ICP-Brasil no core
-- [x] e-CPF no core
-- [x] e-CNPJ no core
-- [x] AC Raiz Brasileira hardcoded
-- [x] Políticas nacionais hardcoded
-- [x] API HTTP/SaaS
-- [x] Assinatura XML
-- [x] XAdES
-- [x] Assinatura genérica de binários
-- [x] Engine genérica PKCS#7
-- [x] Ferramenta de certificação nacional
-- [x] Regras jurídicas brasileiras no core
+- [ ] Relatório ETSI detalhado
+- [ ] Relatório de integridade PDF
+- [ ] Relatório de cadeia criptográfica

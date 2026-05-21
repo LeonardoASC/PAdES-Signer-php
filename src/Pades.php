@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades;
 
-use NihilLabs\Pades\Pdf\RealPdfSigner;
+use NihilLabs\Pades\Signing\PfxSignatureCredential;
 
 final readonly class Pades
 {
@@ -12,13 +12,17 @@ final readonly class Pades
         string $inputPdf,
         string $outputPdf,
         string $certificatePath,
-        string $certificatePassword
+        string $certificatePassword,
+        ?PadesSignatureOptions $options = null
     ): void {
-        (new RealPdfSigner())->sign(
+        (new PadesSigner())->sign(
             inputPdf: $inputPdf,
             outputPdf: $outputPdf,
-            certificatePath: $certificatePath,
-            certificatePassword: $certificatePassword
+            credential: new PfxSignatureCredential(
+                pathOrCertificate: $certificatePath,
+                password: $certificatePassword
+            ),
+            options: $options
         );
     }
 }

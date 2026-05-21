@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
-use NihilLabs\Pades\Crypto\Cades\SignedAttributesBuilder;
-use NihilLabs\Pades\Crypto\Cades\SignedAttributesSigner;
-use NihilLabs\Pades\Crypto\Cades\SignedDataBuilder;
-use NihilLabs\Pades\Crypto\Cades\SignerInfoBuilder;
+use NihilLabs\Pades\Internal\Crypto\Cades\SignedAttributesBuilder;
+use NihilLabs\Pades\Internal\Crypto\Cades\SignedAttributesSigner;
+use NihilLabs\Pades\Internal\Crypto\Cades\SignedDataBuilder;
+use NihilLabs\Pades\Internal\Crypto\Cades\SignerInfoBuilder;
 use PHPUnit\Framework\TestCase;
 use NihilLabs\Pades\Crypto\Asn1\Der;
 

@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace NihilLabs\Pades\Crypto;
+namespace NihilLabs\Pades\Validation;
+
+use NihilLabs\Pades\Internal\Crypto\CmsBaselineProfile;
 
 final readonly class PadesBaselineInspector
 {

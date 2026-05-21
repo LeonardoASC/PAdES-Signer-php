@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades\Crypto\Timestamp;
 
-interface TimestampClientInterface
+use NihilLabs\Pades\Timestamp\TimestampProviderInterface;
+
+interface TimestampClientInterface extends TimestampProviderInterface
 {
     public function requestToken(string $timestampRequestDer): string;
 }

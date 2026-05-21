@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NihilLabs\Pades\Crypto;
+namespace NihilLabs\Pades\Validation;
 
 final readonly class PadesComplianceReport
 {

@@ -63,7 +63,7 @@ final class PadesCmsSignerTest extends TestCase
         $cms = (new PadesCmsSigner($certificate))
             ->signPdfByteRangeData('hello world');
 
-        $inspection = (new \NihilLabs\Pades\Crypto\PadesBaselineInspector())
+        $inspection = (new \NihilLabs\Pades\Validation\PadesBaselineInspector())
             ->inspect($cms);
 
         $this->assertTrue(

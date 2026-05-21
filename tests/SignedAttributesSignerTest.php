@@ -6,8 +6,8 @@ namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
 use NihilLabs\Pades\Crypto\Asn1\Der;
-use NihilLabs\Pades\Crypto\Cades\SignedAttributesBuilder;
-use NihilLabs\Pades\Crypto\Cades\SignedAttributesSigner;
+use NihilLabs\Pades\Internal\Crypto\Cades\SignedAttributesBuilder;
+use NihilLabs\Pades\Internal\Crypto\Cades\SignedAttributesSigner;
 use PHPUnit\Framework\TestCase;
 
 final class SignedAttributesSignerTest extends TestCase

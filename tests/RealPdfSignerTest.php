@@ -186,7 +186,7 @@ final class RealPdfSignerTest extends TestCase
         $cms = (new \NihilLabs\Pades\Pdf\PdfSignatureExtractor())
             ->extractBinarySignatureWithoutPadding($pdf);
 
-        $inspection = (new \NihilLabs\Pades\Crypto\PadesBaselineInspector())
+        $inspection = (new \NihilLabs\Pades\Validation\PadesBaselineInspector())
             ->inspect($cms);
 
         $this->assertTrue(

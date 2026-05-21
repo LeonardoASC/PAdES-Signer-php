@@ -6,7 +6,7 @@ namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
 use NihilLabs\Pades\Crypto\Asn1\Der;
-use NihilLabs\Pades\Crypto\Cades\EssCertIdV2;
+use NihilLabs\Pades\Internal\Crypto\Cades\EssCertIdV2;
 use NihilLabs\Pades\Crypto\X509\X509NameDerExtractor;
 use PHPUnit\Framework\TestCase;
 

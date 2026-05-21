@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NihilLabs\Pades\Crypto\Cades;
+namespace NihilLabs\Pades\Internal\Crypto\Cades;
 
 use NihilLabs\Pades\Crypto\Asn1\Der;
 use NihilLabs\Pades\Crypto\X509\X509NameDerExtractor;

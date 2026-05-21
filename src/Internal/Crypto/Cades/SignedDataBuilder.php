@@ -2,22 +2,26 @@
 
 declare(strict_types=1);
 
-namespace NihilLabs\Pades\Crypto\Cades;
+namespace NihilLabs\Pades\Internal\Crypto\Cades;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
 use NihilLabs\Pades\Crypto\Asn1\Der;
+use NihilLabs\Pades\Signing\PfxSignatureCredential;
+use NihilLabs\Pades\Signing\SignatureCredentialInterface;
 
 final readonly class SignedDataBuilder
 {
     public function build(
-        PfxCertificate $certificate,
+        PfxCertificate|SignatureCredentialInterface $certificate,
         string $signerInfo
     ): string {
+        $credential = $this->normalizeCredential($certificate);
+
         return Der::sequence(
             Der::integer(1)
                 . Der::set($this->digestAlgorithm())
                 . $this->encapContentInfo()
-                . $this->certificates($certificate)
+                . $this->certificates($credential)
                 . Der::set($signerInfo)
         );
     }
@@ -35,11 +39,11 @@ final readonly class SignedDataBuilder
     }
 
     private function certificates(
-        PfxCertificate $certificate
+        SignatureCredentialInterface $credential
     ): string {
         $certificates = [];
 
-        foreach ($certificate->getCertificateChain() as $pem) {
+        foreach ($credential->getCertificateChainPem() as $pem) {
             $certificates[] = $this->pemToDer($pem);
         }
 
@@ -66,5 +70,13 @@ final readonly class SignedDataBuilder
         }
 
         return $decoded;
+    }
+
+    private function normalizeCredential(
+        PfxCertificate|SignatureCredentialInterface $credential
+    ): SignatureCredentialInterface {
+        return $credential instanceof PfxCertificate
+            ? new PfxSignatureCredential($credential)
+            : $credential;
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades\Tests;
 
-use NihilLabs\Pades\Crypto\PadesComplianceReport;
+use NihilLabs\Pades\Validation\PadesComplianceReport;
 use PHPUnit\Framework\TestCase;
 
 final class PadesComplianceReportTest extends TestCase

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades\Tests;
 
-use NihilLabs\Pades\Crypto\Cades\CertificateRefsAttribute;
+use NihilLabs\Pades\Internal\Crypto\Cades\CertificateRefsAttribute;
 use PHPUnit\Framework\TestCase;
 
 final class CertificateRefsAttributeTest extends TestCase
