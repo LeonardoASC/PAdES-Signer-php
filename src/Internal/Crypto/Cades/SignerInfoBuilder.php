@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Internal\Crypto\Cades;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
+use NihilLabs\Pades\Crypto\Algorithm\SignatureAlgorithmPolicy;
 use NihilLabs\Pades\Crypto\Asn1\Der;
 use NihilLabs\Pades\Signing\PfxSignatureCredential;
 use NihilLabs\Pades\Signing\SignatureCredentialInterface;
@@ -15,15 +16,16 @@ final readonly class SignerInfoBuilder
         PfxCertificate|SignatureCredentialInterface $certificate,
         string $signedAttributesForCms,
         string $encryptedDigest,
-        ?string $unsignedAttributesForCms = null
+        ?string $unsignedAttributesForCms = null,
+        SignatureAlgorithmPolicy $algorithmPolicy = new SignatureAlgorithmPolicy()
     ): string {
         $credential = $this->normalizeCredential($certificate);
 
         $content = Der::integer(1)
             . $this->sid($credential)
-            . $this->digestAlgorithm()
+            . $algorithmPolicy->digestAlgorithmIdentifier()
             . $signedAttributesForCms
-            . $this->signatureAlgorithm()
+            . $algorithmPolicy->signatureAlgorithmIdentifier()
             . Der::octetString($encryptedDigest);
 
         if ($unsignedAttributesForCms !== null) {
@@ -47,16 +49,4 @@ final readonly class SignerInfoBuilder
             : $credential;
     }
 
-    private function digestAlgorithm(): string
-    {
-        return Der::sha256AlgorithmIdentifier();
-    }
-
-    private function signatureAlgorithm(): string
-    {
-        return Der::sequence(
-            Der::oid('2a864886f70d01010b')
-                . Der::null()
-        );
-    }
 }

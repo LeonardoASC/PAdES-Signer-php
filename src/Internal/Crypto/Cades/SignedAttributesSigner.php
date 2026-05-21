@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Internal\Crypto\Cades;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
+use NihilLabs\Pades\Crypto\Algorithm\SignatureAlgorithmPolicy;
 use RuntimeException;
 
 final readonly class SignedAttributesSigner
 {
     public function __construct(
-        private PfxCertificate $certificate
+        private PfxCertificate $certificate,
+        private SignatureAlgorithmPolicy $algorithmPolicy = new SignatureAlgorithmPolicy()
     ) {}
 
     public function sign(string $signedAttributes): string
@@ -21,7 +23,7 @@ final readonly class SignedAttributesSigner
             data: $signedAttributes,
             signature: $signature,
             private_key: $this->certificate->getPrivateKey(),
-            algorithm: OPENSSL_ALGO_SHA256
+            algorithm: $this->algorithmPolicy->openSslDigestAlgorithm()
         );
 
         if (! $success) {
@@ -41,7 +43,7 @@ final readonly class SignedAttributesSigner
             data: $signedAttributes,
             signature: $signature,
             public_key: $this->certificate->getPublicCertificate(),
-            algorithm: OPENSSL_ALGO_SHA256
+            algorithm: $this->algorithmPolicy->openSslDigestAlgorithm()
         );
 
         return $result === 1;

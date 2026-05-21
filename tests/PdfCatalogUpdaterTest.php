@@ -93,4 +93,30 @@ final class PdfCatalogUpdaterTest extends TestCase
 
         $this->assertSame(1, preg_match_all('/\/ESIC\b/', $updatedAgain));
     }
+
+    public function test_it_adds_doc_mdp_permission_to_catalog(): void
+    {
+        $catalog = "<< /Type /Catalog /Pages 1 0 R >>";
+
+        $updated = (new PdfCatalogUpdater())->addDocMdpPermission(
+            catalogBody: $catalog,
+            signatureObjectNumber: 10
+        );
+
+        $this->assertStringContainsString('/Perms <<', $updated);
+        $this->assertStringContainsString('/DocMDP 10 0 R', $updated);
+    }
+
+    public function test_it_merges_doc_mdp_permission_into_existing_perms(): void
+    {
+        $catalog = "<< /Type /Catalog /Perms << /UR3 9 0 R >> >>";
+
+        $updated = (new PdfCatalogUpdater())->addDocMdpPermission(
+            catalogBody: $catalog,
+            signatureObjectNumber: 10
+        );
+
+        $this->assertStringContainsString('/UR3 9 0 R', $updated);
+        $this->assertStringContainsString('/DocMDP 10 0 R', $updated);
+    }
 }

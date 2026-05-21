@@ -47,6 +47,22 @@ final readonly class PdfCatalogUpdater
         );
     }
 
+    public function addDocMdpPermission(
+        string $catalogBody,
+        int $signatureObjectNumber
+    ): string {
+        if (preg_match('/\/Perms\s*<<(?:(?!>>).)*\/DocMDP\b/s', $catalogBody) === 1) {
+            throw new RuntimeException('O Catalog ja possui permissao DocMDP.');
+        }
+
+        return (new PdfDictionaryUpdater())->ensureDictionaryEntry(
+            dictionary: $catalogBody,
+            dictionaryName: 'Perms',
+            entryName: 'DocMDP',
+            entryBody: "{$signatureObjectNumber} 0 R"
+        );
+    }
+
     public function addDss(
         string $catalogBody,
         int $dssObjectNumber

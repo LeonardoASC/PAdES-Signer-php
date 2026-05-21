@@ -6,6 +6,7 @@ namespace NihilLabs\Pades\Pdf;
 
 use InvalidArgumentException;
 use RuntimeException;
+use NihilLabs\Pades\Crypto\Algorithm\SignatureAlgorithmPolicy;
 use NihilLabs\Pades\Internal\Crypto\PadesCmsSigner;
 use NihilLabs\Pades\Signing\PfxSignatureCredential;
 use NihilLabs\Pades\Signing\SignatureCredentialInterface;
@@ -31,7 +32,12 @@ final readonly class RealPdfSigner
         ?string $signatureContactInfo = null,
         ?SignatureCredentialInterface $signatureCredential = null,
         ?SignerProviderInterface $signerProvider = null,
-        ?string $signatureFieldName = null
+        ?string $signatureFieldName = null,
+        string $signatureType = 'approval',
+        int $certificationPermission = 2,
+        array $lockedFieldNames = [],
+        string $fieldLockAction = 'Include',
+        ?SignatureAlgorithmPolicy $algorithmPolicy = null
     ): void {
         if (! file_exists($inputPdf)) {
             throw new InvalidArgumentException("PDF de entrada não encontrado: {$inputPdf}");
@@ -41,6 +47,18 @@ final readonly class RealPdfSigner
 
         if ($content === false || ! str_starts_with($content, '%PDF-')) {
             throw new InvalidArgumentException('Arquivo de entrada não é um PDF válido.');
+        }
+
+        if (! in_array($signatureType, ['approval', 'certification'], true)) {
+            throw new InvalidArgumentException('Tipo de assinatura PDF deve ser approval ou certification.');
+        }
+
+        $algorithmPolicy ??= SignatureAlgorithmPolicy::default();
+
+        $isCertificationSignature = $signatureType === 'certification';
+
+        if ($isCertificationSignature && (new PdfSignatureFieldInspector())->hasSignatures($content)) {
+            throw new RuntimeException('Assinatura de certificacao deve ser a primeira assinatura do PDF.');
         }
 
         $structure = (new PdfStructuralParser())->parse($content);
@@ -120,12 +138,27 @@ final readonly class RealPdfSigner
         $fieldName = $signatureFieldName
             ?? $fieldLocator->nextAvailableFieldName($structure);
 
+        if ($isCertificationSignature) {
+            $updatedCatalog = $catalogUpdater->addDocMdpPermission(
+                catalogBody: $updatedCatalog,
+                signatureObjectNumber: $signatureObjectNumber
+            );
+        }
+
+        $signatureReferences = (new PdfSignatureReferenceBuilder())->build(
+            catalogObjectNumber: $catalogNumber,
+            certificationPermission: $isCertificationSignature ? $certificationPermission : null,
+            lockedFieldNames: $lockedFieldNames,
+            fieldLockAction: $fieldLockAction
+        );
+
         $objects = [
             $signatureObjectNumber => $this->signatureObject(
                 name: $signatureName,
                 reason: $signatureReason,
                 location: $signatureLocation,
-                contactInfo: $signatureContactInfo
+                contactInfo: $signatureContactInfo,
+                references: $signatureReferences
             ),
 
             $catalogNumber => $updatedCatalog,
@@ -181,7 +214,8 @@ final readonly class RealPdfSigner
                 pdfContent: $updated,
                 signatureCredential: $signatureCredential,
                 timestampClient: $timestampClient,
-                signerProvider: $signerProvider
+                signerProvider: $signerProvider,
+                algorithmPolicy: $algorithmPolicy
             );
         }
 
@@ -197,7 +231,8 @@ final readonly class RealPdfSigner
         string $name = 'PAdES Core',
         string $reason = 'Document signed digitally',
         ?string $location = null,
-        ?string $contactInfo = null
+        ?string $contactInfo = null,
+        string $references = ''
     ): string
     {
         $contents = new PdfSignatureContents(
@@ -215,6 +250,10 @@ final readonly class RealPdfSigner
             . "/M (D:{$date}+00'00')\n"
             . "/Name " . $this->pdfString($name) . "\n"
             . "/Reason " . $this->pdfString($reason) . "\n";
+
+        if ($references !== '') {
+            $signature .= $references;
+        }
 
         if ($location !== null) {
             $signature .= "/Location " . $this->pdfString($location) . "\n";
@@ -240,7 +279,8 @@ final readonly class RealPdfSigner
         string $pdfContent,
         SignatureCredentialInterface $signatureCredential,
         ?TimestampProviderInterface $timestampClient = null,
-        ?SignerProviderInterface $signerProvider = null
+        ?SignerProviderInterface $signerProvider = null,
+        SignatureAlgorithmPolicy $algorithmPolicy = new SignatureAlgorithmPolicy()
     ): string {
         $signaturePlaceholder = new PdfSignaturePlaceholder();
 
@@ -265,7 +305,8 @@ final readonly class RealPdfSigner
         $cms = (new PadesCmsSigner(
             certificate: $signatureCredential,
             timestampClient: $timestampClient,
-            signerProvider: $signerProvider
+            signerProvider: $signerProvider,
+            algorithmPolicy: $algorithmPolicy
         ))->signPdfByteRangeData(
             $signedData
         );

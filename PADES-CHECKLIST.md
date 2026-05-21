@@ -128,28 +128,28 @@ Essa é uma das partes mais importantes do PAdES.
 6. Assinaturas Avançadas PDF
 ## 6.1 Assinaturas PDF Avançadas
 
-- [ ] Certification signature
-- [ ] Approval signature
-- [ ] `/Perms`
-- [ ] DocMDP
-- [ ] FieldMDP
-- [ ] `/Reference`
-- [ ] `/TransformMethod`
-- [ ] `/TransformParams`
-- [ ] Controle de permissões pós-assinatura
-- [ ] Travamento de campos após assinatura
+- [x] Certification signature
+- [x] Approval signature
+- [x] `/Perms`
+- [x] DocMDP
+- [x] FieldMDP
+- [x] `/Reference`
+- [x] `/TransformMethod`
+- [x] `/TransformParams`
+- [x] Controle de permissões pós-assinatura
+- [x] Travamento de campos após assinatura
 7. Algoritmos Criptográficos
 ## 7.1 Algoritmos
 
-- [ ] Algoritmos configuráveis
-- [ ] SHA-384
-- [ ] SHA-512
-- [ ] RSA-PSS
-- [ ] ECDSA
-- [ ] Política de algoritmo
-- [ ] Negotiation de algoritmo
-- [ ] Rejeição de algoritmos inseguros
-- [ ] Política mínima de hash
+- [x] Algoritmos configuráveis
+- [x] SHA-384
+- [x] SHA-512
+- [x] RSA-PSS
+- [x] ECDSA
+- [x] Política de algoritmo
+- [x] Negotiation de algoritmo
+- [x] Rejeição de algoritmos inseguros
+- [x] Política mínima de hash
 8. Credenciais de Assinatura
 ## 8.1 Credenciais
 

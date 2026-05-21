@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Internal\Crypto;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
+use NihilLabs\Pades\Crypto\Algorithm\SignatureAlgorithmPolicy;
 use NihilLabs\Pades\Internal\Crypto\Cades\ContentInfoBuilder;
 use NihilLabs\Pades\Internal\Crypto\Cades\SignedAttributesBuilder;
 use NihilLabs\Pades\Internal\Crypto\Cades\SignedDataBuilder;
@@ -29,7 +30,8 @@ final readonly class PadesCmsSigner
     public function __construct(
         PfxCertificate|SignatureCredentialInterface $certificate,
         private ?TimestampProviderInterface $timestampClient = null,
-        ?SignerProviderInterface $signerProvider = null
+        ?SignerProviderInterface $signerProvider = null,
+        private SignatureAlgorithmPolicy $algorithmPolicy = new SignatureAlgorithmPolicy()
     ) {
         $this->signatureCredential = $certificate instanceof PfxCertificate
             ? new PfxSignatureCredential($certificate)
@@ -44,7 +46,8 @@ final readonly class PadesCmsSigner
         $signedAttributesForSignature = (new SignedAttributesBuilder())
             ->build(
                 data: $data,
-                certificatePem: $this->signatureCredential->getCertificatePem()
+                certificatePem: $this->signatureCredential->getCertificatePem(),
+                algorithmPolicy: $this->algorithmPolicy
             );
 
         $signedAttributesForCms = Der::contextSpecificImplicitFromEncoded(
@@ -54,7 +57,8 @@ final readonly class PadesCmsSigner
 
         $encryptedDigest = $this->signerProvider->sign(
             data: $signedAttributesForSignature,
-            credential: $this->signatureCredential
+            credential: $this->signatureCredential,
+            algorithmPolicy: $this->algorithmPolicy
         );
 
         $unsignedAttributes = [];
@@ -82,13 +86,15 @@ final readonly class PadesCmsSigner
                 certificate: $this->signatureCredential,
                 signedAttributesForCms: $signedAttributesForCms,
                 encryptedDigest: $encryptedDigest,
-                unsignedAttributesForCms: $unsignedAttributesForCms
+                unsignedAttributesForCms: $unsignedAttributesForCms,
+                algorithmPolicy: $this->algorithmPolicy
             );
 
         $signedData = (new SignedDataBuilder())
             ->build(
                 certificate: $this->signatureCredential,
-                signerInfo: $signerInfo
+                signerInfo: $signerInfo,
+                algorithmPolicy: $this->algorithmPolicy
             );
 
 

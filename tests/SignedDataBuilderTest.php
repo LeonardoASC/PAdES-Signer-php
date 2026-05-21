@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
+use NihilLabs\Pades\Crypto\Algorithm\SignatureAlgorithmPolicy;
 use NihilLabs\Pades\Internal\Crypto\Cades\SignedAttributesBuilder;
 use NihilLabs\Pades\Internal\Crypto\Cades\SignedAttributesSigner;
 use NihilLabs\Pades\Internal\Crypto\Cades\SignedDataBuilder;
@@ -68,5 +69,44 @@ final class SignedDataBuilderTest extends TestCase
             hex2bin('2a864886f70d010701'),
             $signedData
         );
+    }
+
+    public function test_it_builds_signed_data_with_configured_digest_algorithm(): void
+    {
+        $certificate = new PfxCertificate(
+            path: __DIR__ . '/Fixtures/certificate.pfx',
+            password: '123456'
+        );
+
+        $policy = new SignatureAlgorithmPolicy(
+            hashAlgorithm: SignatureAlgorithmPolicy::HASH_SHA384
+        );
+
+        $attributes = (new SignedAttributesBuilder())
+            ->build(
+                data: 'hello world',
+                certificatePem: $certificate->getPublicCertificate(),
+                algorithmPolicy: $policy
+            );
+
+        $signature = (new SignedAttributesSigner($certificate, $policy))
+            ->sign($attributes);
+
+        $signerInfo = (new SignerInfoBuilder())
+            ->build(
+                certificate: $certificate,
+                signedAttributesForCms: Der::contextSpecificImplicitFromEncoded(0, $attributes),
+                encryptedDigest: $signature,
+                algorithmPolicy: $policy
+            );
+
+        $signedData = (new SignedDataBuilder())
+            ->build(
+                certificate: $certificate,
+                signerInfo: $signerInfo,
+                algorithmPolicy: $policy
+            );
+
+        $this->assertStringContainsString(hex2bin('608648016503040202'), $signedData);
     }
 }

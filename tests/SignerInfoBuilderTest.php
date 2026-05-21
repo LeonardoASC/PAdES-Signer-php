@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
+use NihilLabs\Pades\Crypto\Algorithm\SignatureAlgorithmPolicy;
 use NihilLabs\Pades\Internal\Crypto\Cades\SignedAttributesBuilder;
 use NihilLabs\Pades\Internal\Crypto\Cades\SignedAttributesSigner;
 use NihilLabs\Pades\Internal\Crypto\Cades\SignerInfoBuilder;
@@ -122,5 +123,39 @@ final class SignerInfoBuilderTest extends TestCase
             'unsigned',
             $signerInfo
         );
+    }
+
+    public function test_it_builds_signer_info_with_configured_algorithms(): void
+    {
+        $certificate = new PfxCertificate(
+            path: __DIR__ . '/Fixtures/certificate.pfx',
+            password: '123456'
+        );
+
+        $policy = new SignatureAlgorithmPolicy(
+            hashAlgorithm: SignatureAlgorithmPolicy::HASH_SHA512,
+            signatureAlgorithm: SignatureAlgorithmPolicy::SIGNATURE_RSA
+        );
+
+        $attributes = (new SignedAttributesBuilder())
+            ->build(
+                data: 'hello world',
+                certificatePem: $certificate->getPublicCertificate(),
+                algorithmPolicy: $policy
+            );
+
+        $signature = (new SignedAttributesSigner($certificate, $policy))
+            ->sign($attributes);
+
+        $signerInfo = (new SignerInfoBuilder())
+            ->build(
+                certificate: $certificate,
+                signedAttributesForCms: Der::contextSpecificImplicitFromEncoded(0, $attributes),
+                encryptedDigest: $signature,
+                algorithmPolicy: $policy
+            );
+
+        $this->assertStringContainsString(hex2bin('608648016503040203'), $signerInfo);
+        $this->assertStringContainsString(hex2bin('2a864886f70d01010d'), $signerInfo);
     }
 }

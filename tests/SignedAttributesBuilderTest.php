@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
+use NihilLabs\Pades\Crypto\Algorithm\SignatureAlgorithmPolicy;
 use NihilLabs\Pades\Internal\Crypto\Cades\SignedAttributesBuilder;
 use PHPUnit\Framework\TestCase;
 
@@ -142,5 +143,32 @@ final class SignedAttributesBuilderTest extends TestCase
         $this->assertLessThan($signingTimePosition, $contentTypePosition);
         $this->assertLessThan($messageDigestPosition, $signingTimePosition);
         $this->assertLessThan($signingCertificatePosition, $messageDigestPosition);
+    }
+
+    public function test_it_uses_configured_hash_for_message_digest(): void
+    {
+        $certificate = new PfxCertificate(
+            path: __DIR__ . '/Fixtures/certificate.pfx',
+            password: '123456'
+        );
+
+        $attributes = (new SignedAttributesBuilder())
+            ->build(
+                data: 'hello world',
+                certificatePem: $certificate->getPublicCertificate(),
+                algorithmPolicy: new SignatureAlgorithmPolicy(
+                    hashAlgorithm: SignatureAlgorithmPolicy::HASH_SHA512
+                )
+            );
+
+        $this->assertStringContainsString(
+            hash('sha512', 'hello world', binary: true),
+            $attributes
+        );
+
+        $this->assertStringNotContainsString(
+            hash('sha256', 'hello world', binary: true),
+            $attributes
+        );
     }
 }

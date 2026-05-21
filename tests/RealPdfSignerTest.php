@@ -6,6 +6,7 @@ namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Pdf\MinimalPdfGenerator;
 use NihilLabs\Pades\Pdf\RealPdfSigner;
+use NihilLabs\Pades\Crypto\Algorithm\SignatureAlgorithmPolicy;
 use PHPUnit\Framework\TestCase;
 
 final class RealPdfSignerTest extends TestCase
@@ -185,6 +186,123 @@ final class RealPdfSignerTest extends TestCase
         $this->assertStringContainsString('/T (Approval)', $content);
         $this->assertMatchesRegularExpression('/4\s+0\s+obj\s*<<.*\/V\s+6\s+0\s+R.*>>\s*endobj/s', $content);
         $this->assertDoesNotMatchRegularExpression('/7\s+0\s+obj\s*<<.*\/Subtype\s*\/Widget\b/s', $content);
+    }
+
+    public function test_it_generates_approval_signature_by_default(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-approval-input-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-approval-output-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        file_put_contents($input, $this->buildPdf([
+            1 => "<< /Type /Catalog /Pages 2 0 R >>",
+            2 => "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+        ]));
+
+        (new RealPdfSigner())->sign($input, $output);
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertStringNotContainsString('/Perms <<', $content);
+        $this->assertStringNotContainsString('/TransformMethod /DocMDP', $content);
+        $this->assertStringNotContainsString('/Reference [', $content);
+    }
+
+    public function test_it_generates_certification_signature_with_doc_mdp_permissions(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-cert-input-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-cert-output-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        file_put_contents($input, $this->buildPdf([
+            1 => "<< /Type /Catalog /Pages 2 0 R >>",
+            2 => "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+        ]));
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            signatureType: 'certification',
+            certificationPermission: 1
+        );
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertStringContainsString('/Perms <<', $content);
+        $this->assertMatchesRegularExpression('/\/DocMDP\s+\d+\s+0\s+R\b/', $content);
+        $this->assertStringContainsString('/Reference [', $content);
+        $this->assertStringContainsString('/TransformMethod /DocMDP', $content);
+        $this->assertStringContainsString('/TransformParams <<', $content);
+        $this->assertStringContainsString('/P 1', $content);
+    }
+
+    public function test_it_generates_field_mdp_lock_for_selected_fields(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-lock-input-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-lock-output-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        file_put_contents($input, $this->buildPdf([
+            1 => "<< /Type /Catalog /Pages 2 0 R >>",
+            2 => "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+        ]));
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            lockedFieldNames: ['Amount', 'Approval'],
+            fieldLockAction: 'Include'
+        );
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertStringContainsString('/TransformMethod /FieldMDP', $content);
+        $this->assertStringContainsString('/Action /Include', $content);
+        $this->assertStringContainsString('/Fields [(Amount) (Approval)]', $content);
+    }
+
+    public function test_it_signs_pdf_with_configured_sha512_algorithm(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-sha512-input-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-sha512-output-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        file_put_contents($input, $this->buildPdf([
+            1 => "<< /Type /Catalog /Pages 2 0 R >>",
+            2 => "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+        ]));
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
+            certificatePassword: '123456',
+            algorithmPolicy: new SignatureAlgorithmPolicy(
+                hashAlgorithm: SignatureAlgorithmPolicy::HASH_SHA512
+            )
+        );
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertStringNotContainsString('/ByteRange [**********', $content);
+        $this->assertStringContainsString('608648016503040203', strtoupper($content));
+        $this->assertStringContainsString('2A864886F70D01010D', strtoupper($content));
     }
 
     public function test_real_pdf_signer_generates_pades_b_b_ready_cms(): void

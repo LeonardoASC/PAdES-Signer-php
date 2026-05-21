@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Internal\Crypto\Cades;
 
 use NihilLabs\Pades\Certificate\PfxCertificate;
+use NihilLabs\Pades\Crypto\Algorithm\SignatureAlgorithmPolicy;
 use NihilLabs\Pades\Crypto\Asn1\Der;
 use NihilLabs\Pades\Signing\PfxSignatureCredential;
 use NihilLabs\Pades\Signing\SignatureCredentialInterface;
@@ -13,22 +14,18 @@ final readonly class SignedDataBuilder
 {
     public function build(
         PfxCertificate|SignatureCredentialInterface $certificate,
-        string $signerInfo
+        string $signerInfo,
+        SignatureAlgorithmPolicy $algorithmPolicy = new SignatureAlgorithmPolicy()
     ): string {
         $credential = $this->normalizeCredential($certificate);
 
         return Der::sequence(
             Der::integer(1)
-                . Der::set($this->digestAlgorithm())
+                . Der::set($algorithmPolicy->digestAlgorithmIdentifier())
                 . $this->encapContentInfo()
                 . $this->certificates($credential)
                 . Der::set($signerInfo)
         );
-    }
-
-    private function digestAlgorithm(): string
-    {
-        return Der::sha256AlgorithmIdentifier();
     }
 
     private function encapContentInfo(): string

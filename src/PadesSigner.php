@@ -45,7 +45,12 @@ final readonly class PadesSigner
             signatureContactInfo: $options->signatureContactInfo,
             signatureCredential: $credential,
             signerProvider: $options->signerProvider,
-            signatureFieldName: $options->signatureFieldName
+            signatureFieldName: $options->signatureFieldName,
+            signatureType: $options->signatureType,
+            certificationPermission: $options->certificationPermission,
+            lockedFieldNames: $options->lockedFieldNames,
+            fieldLockAction: $options->fieldLockAction,
+            algorithmPolicy: $options->algorithmPolicy()
         );
     }
 }

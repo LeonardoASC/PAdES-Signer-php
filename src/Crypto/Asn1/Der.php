@@ -65,10 +65,23 @@ final readonly class Der
 
     public static function sha256AlgorithmIdentifier(): string
     {
-        return self::sequence(
-            self::oid('608648016503040201')
-                . self::null()
-        );
+        return self::algorithmIdentifier('608648016503040201', withNull: true);
+    }
+
+    public static function algorithmIdentifier(
+        string $oidHex,
+        bool $withNull = false,
+        ?string $parameters = null
+    ): string {
+        $content = self::oid($oidHex);
+
+        if ($parameters !== null) {
+            $content .= $parameters;
+        } elseif ($withNull) {
+            $content .= self::null();
+        }
+
+        return self::sequence($content);
     }
 
     public static function utcTime(string $time): string
