@@ -78,4 +78,19 @@ final class PdfCatalogUpdaterTest extends TestCase
             $updated
         );
     }
+
+    public function test_it_merges_etsi_extension_without_removing_existing_extensions(): void
+    {
+        $catalog = "<< /Type /Catalog /Extensions << /ADBE << /BaseVersion /1.7 /ExtensionLevel 8 >> >> >>";
+
+        $updated = (new PdfCatalogUpdater())->ensureEtsiExtension($catalog);
+
+        $this->assertStringContainsString('/ADBE <<', $updated);
+        $this->assertStringContainsString('/ESIC <<', $updated);
+        $this->assertSame(1, preg_match_all('/\/ESIC\b/', $updated));
+
+        $updatedAgain = (new PdfCatalogUpdater())->ensureEtsiExtension($updated);
+
+        $this->assertSame(1, preg_match_all('/\/ESIC\b/', $updatedAgain));
+    }
 }

@@ -23,6 +23,7 @@ final readonly class PadesSignatureOptions
         public string $signatureName = 'PAdES Core',
         public string $signatureReason = 'Document signed digitally',
         public ?string $signatureLocation = null,
-        public ?string $signatureContactInfo = null
+        public ?string $signatureContactInfo = null,
+        public ?string $signatureFieldName = null
     ) {}
 }

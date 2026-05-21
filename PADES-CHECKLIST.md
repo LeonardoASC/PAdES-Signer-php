@@ -118,13 +118,13 @@ Essa é uma das partes mais importantes do PAdES.
 5. AcroForm e Campos
 ## 5.1 AcroForm e Campos
 
-- [ ] Merge seguro de `/Fields`
-- [ ] Merge seguro de `/Annots`
-- [ ] Merge seguro de `/Extensions`
-- [ ] Campos de assinatura nomeáveis
-- [ ] Detecção de campos de assinatura vazios
-- [ ] Assinar campo existente
-- [ ] Criação automática de campo de assinatura
+- [x] Merge seguro de `/Fields`
+- [x] Merge seguro de `/Annots`
+- [x] Merge seguro de `/Extensions`
+- [x] Campos de assinatura nomeáveis
+- [x] Detecção de campos de assinatura vazios
+- [x] Assinar campo existente
+- [x] Criação automática de campo de assinatura
 6. Assinaturas Avançadas PDF
 ## 6.1 Assinaturas PDF Avançadas
 

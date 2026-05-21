@@ -46,4 +46,20 @@ final class PdfPageUpdaterTest extends TestCase
             $updated
         );
     }
+
+    public function test_it_does_not_duplicate_existing_annotation(): void
+    {
+        $page = "<< /Type /Page /Annots [11 0 R] >>";
+
+        $updated = (new PdfPageUpdater())
+            ->addAnnotation(
+                pageBody: $page,
+                widgetObjectNumber: 11
+            );
+
+        $this->assertSame(
+            1,
+            preg_match_all('/11\s+0\s+R/', $updated)
+        );
+    }
 }

@@ -33,42 +33,18 @@ final readonly class PdfCatalogUpdater
 
     public function ensureEtsiExtension(string $catalogBody): string
     {
-        if (str_contains($catalogBody, '/ESIC')) {
-            return $catalogBody;
-        }
-
-        $extension = "/ESIC <<\n"
+        $extension = "<<\n"
             . "/Type /DeveloperExtensions\n"
             . "/BaseVersion /1.7\n"
             . "/ExtensionLevel 1\n"
-            . ">>\n";
+            . ">>";
 
-        if (str_contains($catalogBody, '/Extensions')) {
-            $updated = preg_replace(
-                '/\/Extensions\s*<</',
-                "/Extensions <<\n{$extension}",
-                $catalogBody,
-                1
-            );
-
-            if ($updated === null) {
-                throw new RuntimeException('Nao foi possivel atualizar /Extensions do Catalog.');
-            }
-
-            return $updated;
-        }
-
-        $updated = preg_replace(
-            '/>>\s*$/',
-            "/Extensions <<\n{$extension}>>\n>>",
-            $catalogBody
+        return (new PdfDictionaryUpdater())->ensureDictionaryEntry(
+            dictionary: $catalogBody,
+            dictionaryName: 'Extensions',
+            entryName: 'ESIC',
+            entryBody: $extension
         );
-
-        if ($updated === null) {
-            throw new RuntimeException('Nao foi possivel adicionar /Extensions ao Catalog.');
-        }
-
-        return $updated;
     }
 
     public function addDss(

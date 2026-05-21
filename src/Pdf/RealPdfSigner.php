@@ -30,7 +30,8 @@ final readonly class RealPdfSigner
         ?string $signatureLocation = null,
         ?string $signatureContactInfo = null,
         ?SignatureCredentialInterface $signatureCredential = null,
-        ?SignerProviderInterface $signerProvider = null
+        ?SignerProviderInterface $signerProvider = null,
+        ?string $signatureFieldName = null
     ): void {
         if (! file_exists($inputPdf)) {
             throw new InvalidArgumentException("PDF de entrada não encontrado: {$inputPdf}");
@@ -42,14 +43,22 @@ final readonly class RealPdfSigner
             throw new InvalidArgumentException('Arquivo de entrada não é um PDF válido.');
         }
 
+        $structure = (new PdfStructuralParser())->parse($content);
+        $fieldLocator = new PdfSignatureFieldLocator();
+        $existingSignatureField = $signatureFieldName === null
+            ? null
+            : $fieldLocator->findEmptySignatureField($structure, $signatureFieldName);
+
         $objectInspector = new PdfObjectInspector();
 
         $nextObjectNumber = $objectInspector
             ->getNextObjectNumber($content);
 
         $signatureObjectNumber = $nextObjectNumber;
-        $widgetObjectNumber = $nextObjectNumber + 1;
-        $nextAvailableObjectNumber = $nextObjectNumber + 2;
+        $widgetObjectNumber = $existingSignatureField?->objectNumber ?? $nextObjectNumber + 1;
+        $nextAvailableObjectNumber = $existingSignatureField === null
+            ? $nextObjectNumber + 2
+            : $nextObjectNumber + 1;
         $appearanceObjectNumber = $visibleSignature
             ? $nextAvailableObjectNumber
             : null;
@@ -82,11 +91,8 @@ final readonly class RealPdfSigner
                 catalogBody: $catalogBody,
                 acroFormObjectNumber: $acroFormObjectNumber
             );
-        } else {
-            $acroFormBody = (new PdfStructuralParser())
-                ->parse($content)
-                ->getObject($acroFormObjectNumber)
-                ->body;
+        } elseif ($existingSignatureField === null) {
+            $acroFormBody = $structure->getObject($acroFormObjectNumber)->body;
 
             $updatedAcroForm = (new PdfAcroFormUpdater())
                 ->addSignatureField(
@@ -103,11 +109,16 @@ final readonly class RealPdfSigner
         $pageBody = $pageInspector
             ->getFirstPageObjectBody($content);
 
-        $updatedPage = (new PdfPageUpdater())
-            ->addAnnotation(
-                pageBody: $pageBody,
-                widgetObjectNumber: $widgetObjectNumber
-            );
+        $updatedPage = $existingSignatureField === null
+            ? (new PdfPageUpdater())
+                ->addAnnotation(
+                    pageBody: $pageBody,
+                    widgetObjectNumber: $widgetObjectNumber
+                )
+            : null;
+
+        $fieldName = $signatureFieldName
+            ?? $fieldLocator->nextAvailableFieldName($structure);
 
         $objects = [
             $signatureObjectNumber => $this->signatureObject(
@@ -117,24 +128,35 @@ final readonly class RealPdfSigner
                 contactInfo: $signatureContactInfo
             ),
 
-            $widgetObjectNumber => (new PdfSignatureWidget())
+            $catalogNumber => $updatedCatalog,
+        ];
+
+        if ($existingSignatureField === null) {
+            $objects[$widgetObjectNumber] = (new PdfSignatureWidget())
                 ->build(
                     signatureObjectNumber: $signatureObjectNumber,
                     pageObjectNumber: $pageNumber,
                     rect: $visibleSignature ? $signatureRect : [0, 0, 0, 0],
                     flags: $visibleSignature ? $signatureFlags : 4,
-                    appearanceObjectNumber: $appearanceObjectNumber
-                ),
+                    appearanceObjectNumber: $appearanceObjectNumber,
+                    fieldName: $fieldName
+                );
 
-            $catalogNumber => $updatedCatalog,
+            $objects[$pageNumber] = $updatedPage;
+        } else {
+            $objects[$existingSignatureField->objectNumber] = $fieldLocator->withSignatureValue(
+                fieldBody: $existingSignatureField->body,
+                signatureObjectNumber: $signatureObjectNumber
+            );
+        }
 
-            $pageNumber => $updatedPage,
-        ];
-
-        $objects[$acroFormObjectNumber] = $updatedAcroForm
-            ?? (new PdfAcroForm())->build(
+        if ($updatedAcroForm !== null) {
+            $objects[$acroFormObjectNumber] = $updatedAcroForm;
+        } elseif ($acroFormObjectNumber >= $nextObjectNumber) {
+            $objects[$acroFormObjectNumber] = (new PdfAcroForm())->build(
                 widgetObjectNumber: $widgetObjectNumber
             );
+        }
 
         if ($appearanceObjectNumber !== null) {
             $objects[$appearanceObjectNumber] = (new PdfSignatureAppearance())

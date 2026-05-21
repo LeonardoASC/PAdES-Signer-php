@@ -42,4 +42,15 @@ final class PdfSignatureWidgetTest extends TestCase
         $this->assertStringContainsString('/AP <<', $widget);
         $this->assertStringContainsString('/N 11 0 R', $widget);
     }
+
+    public function test_it_builds_named_signature_widget(): void
+    {
+        $widget = (new PdfSignatureWidget())
+            ->build(
+                signatureObjectNumber: 10,
+                fieldName: 'Approval.Signature'
+            );
+
+        $this->assertStringContainsString('/T (Approval.Signature)', $widget);
+    }
 }

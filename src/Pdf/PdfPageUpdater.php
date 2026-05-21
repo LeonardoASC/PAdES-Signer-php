@@ -12,31 +12,17 @@ final readonly class PdfPageUpdater
         string $pageBody,
         int $widgetObjectNumber
     ): string {
-        if (preg_match('/\/Annots\s*\[([^\]]*)\]/s', $pageBody)) {
-            $updated = preg_replace(
-                '/\/Annots\s*\[([^\]]*)\]/s',
-                "/Annots [$1 {$widgetObjectNumber} 0 R]",
-                $pageBody,
-                1
+        try {
+            return (new PdfDictionaryUpdater())->appendReferenceToArray(
+                dictionary: $pageBody,
+                name: 'Annots',
+                objectNumber: $widgetObjectNumber
             );
-
-            if ($updated === null) {
-                throw new RuntimeException('Não foi possível atualizar /Annots existente.');
-            }
-
-            return $updated;
+        } catch (RuntimeException $exception) {
+            throw new RuntimeException(
+                'Nao foi possivel atualizar /Annots do objeto /Page.',
+                previous: $exception
+            );
         }
-
-        $updated = preg_replace(
-            '/>>\s*$/',
-            "/Annots [{$widgetObjectNumber} 0 R]\n>>",
-            $pageBody
-        );
-
-        if ($updated === null) {
-            throw new RuntimeException('Não foi possível atualizar o objeto /Page.');
-        }
-
-        return $updated;
     }
 }

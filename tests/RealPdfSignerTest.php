@@ -162,6 +162,31 @@ final class RealPdfSignerTest extends TestCase
         $this->assertStringContainsString('/ESIC <<', $content);
     }
 
+    public function test_it_signs_existing_empty_named_signature_field(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-empty-field-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-filled-field-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        file_put_contents($input, $this->buildPdfWithEmptySignatureField());
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            signatureFieldName: 'Approval'
+        );
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertSame(2, preg_match_all('/\/Subtype\s*\/Widget\b/', $content));
+        $this->assertStringContainsString('/T (Approval)', $content);
+        $this->assertMatchesRegularExpression('/4\s+0\s+obj\s*<<.*\/V\s+6\s+0\s+R.*>>\s*endobj/s', $content);
+        $this->assertDoesNotMatchRegularExpression('/7\s+0\s+obj\s*<<.*\/Subtype\s*\/Widget\b/s', $content);
+    }
+
     public function test_real_pdf_signer_generates_pades_b_b_ready_cms(): void
     {
         $input = __DIR__ . '/Output/pades-bb-input.pdf';
@@ -196,5 +221,43 @@ final class RealPdfSignerTest extends TestCase
         $this->assertTrue(
             $inspection['is_pades_b_b_ready']
         );
+    }
+
+    private function buildPdfWithEmptySignatureField(): string
+    {
+        return $this->buildPdf([
+            1 => "<< /Type /Catalog /Pages 2 0 R /AcroForm 5 0 R >>",
+            2 => "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            3 => "<< /Type /Page /Parent 2 0 R /Annots [4 0 R] /MediaBox [0 0 612 792] >>",
+            4 => "<< /Type /Annot /Subtype /Widget /FT /Sig /Rect [0 0 0 0] /T (Approval) /F 4 /P 3 0 R >>",
+            5 => "<< /Fields [4 0 R] /SigFlags 3 >>",
+        ]);
+    }
+
+    /**
+     * @param array<int, string> $objects
+     */
+    private function buildPdf(array $objects): string
+    {
+        $pdf = "%PDF-1.7\n";
+        $offsets = [];
+
+        foreach ($objects as $number => $body) {
+            $offsets[$number] = strlen($pdf);
+            $pdf .= "{$number} 0 obj\n{$body}\nendobj\n";
+        }
+
+        $xref = strlen($pdf);
+        $size = max(array_keys($objects)) + 1;
+        $pdf .= "xref\n0 {$size}\n";
+        $pdf .= "0000000000 65535 f \n";
+
+        for ($number = 1; $number < $size; $number++) {
+            $pdf .= sprintf("%010d 00000 n \n", $offsets[$number] ?? 0);
+        }
+
+        $pdf .= "trailer\n<< /Size {$size} /Root 1 0 R >>\nstartxref\n{$xref}\n%%EOF\n";
+
+        return $pdf;
     }
 }

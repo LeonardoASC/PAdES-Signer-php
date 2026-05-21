@@ -14,7 +14,8 @@ final readonly class PdfSignatureWidget
         int $pageObjectNumber = 3,
         array $rect = [0, 0, 0, 0],
         int $flags = 4,
-        ?int $appearanceObjectNumber = null
+        ?int $appearanceObjectNumber = null,
+        string $fieldName = 'Signature1'
     ): string {
         $widget = "<<\n"
             . "/Type /Annot\n"
@@ -22,7 +23,7 @@ final readonly class PdfSignatureWidget
             . "/FT /Sig\n"
             . "/Rect [" . $this->formatRect($rect) . "]\n"
             . "/V {$signatureObjectNumber} 0 R\n"
-            . "/T (Signature1)\n"
+            . "/T " . $this->pdfString($fieldName) . "\n"
             . "/F {$flags}\n"
             . "/P {$pageObjectNumber} 0 R\n";
 
@@ -49,5 +50,14 @@ final readonly class PdfSignatureWidget
                 $rect
             )
         );
+    }
+
+    private function pdfString(string $value): string
+    {
+        return '(' . str_replace(
+            ['\\', '(', ')'],
+            ['\\\\', '\\(', '\\)'],
+            $value
+        ) . ')';
     }
 }

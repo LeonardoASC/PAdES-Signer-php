@@ -44,7 +44,8 @@ final readonly class PadesSigner
             signatureLocation: $options->signatureLocation,
             signatureContactInfo: $options->signatureContactInfo,
             signatureCredential: $credential,
-            signerProvider: $options->signerProvider
+            signerProvider: $options->signerProvider,
+            signatureFieldName: $options->signatureFieldName
         );
     }
 }
