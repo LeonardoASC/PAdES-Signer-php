@@ -15,7 +15,7 @@ final class SignatureTimestampTokenExtractorTest extends TestCase
 {
     public function test_it_extracts_signature_timestamp_token_from_cms_unsigned_attributes(): void
     {
-        $response = file_get_contents(__DIR__ . '/Output/timestamp-response.tsr');
+        $response = file_get_contents(__DIR__ . '/Fixtures/timestamp-response.tsr');
         $this->assertNotFalse($response);
 
         $client = new class($response) implements TimestampClientInterface {

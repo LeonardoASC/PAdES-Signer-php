@@ -13,7 +13,7 @@ final class PdfDocTimeStampSignerTest extends TestCase
 {
     public function test_it_adds_pdf_document_timestamp_signature(): void
     {
-        $response = file_get_contents(__DIR__ . '/Output/timestamp-response.tsr');
+        $response = file_get_contents(__DIR__ . '/Fixtures/timestamp-response.tsr');
         $this->assertNotFalse($response);
 
         $client = new class($response) implements TimestampClientInterface {

@@ -39,7 +39,7 @@ final class X509TrustStoreTest extends TestCase
             path: __DIR__ . '/Fixtures/certificate.pfx',
             password: '123456'
         );
-        $otherCertificatePem = file_get_contents(__DIR__ . '/Output/openssl-ref-cert.pem');
+        $otherCertificatePem = file_get_contents(__DIR__ . '/Fixtures/unrelated-trust-anchor.fixture');
         $this->assertNotFalse($otherCertificatePem);
 
         $trustStore = new InMemoryTrustStore([
@@ -77,4 +77,5 @@ final class X509TrustStoreTest extends TestCase
         $this->assertTrue($result->trusted);
         $this->assertSame([], $result->messages);
     }
+
 }

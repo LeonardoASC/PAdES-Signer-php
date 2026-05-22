@@ -277,3 +277,165 @@ Somente depois do core estar estável.
 - [ ] Relatório ETSI detalhado
 - [ ] Relatório de integridade PDF
 - [ ] Relatório de cadeia criptográfica
+
+19. Pendencias identificadas comparando com pyHanko
+
+Esta lista separa itens que podem ja ter uma estrutura inicial no projeto,
+mas ainda precisam de implementacao semantica robusta para chegar perto do
+comportamento do pyHanko.
+
+## 19.1 Validacao real de assinatura PDF
+
+- [ ] Criar modelo equivalente a `EmbeddedPdfSignature`
+- [ ] Extrair campo de assinatura e dicionario `/Sig` por parser PDF, nao por busca textual
+- [ ] Extrair `/Contents` preservando bytes originais
+- [ ] Extrair e validar `/ByteRange` semanticamente
+- [ ] Calcular digest real dos bytes cobertos pelo `/ByteRange`
+- [ ] Comparar digest calculado com `messageDigest` do CMS
+- [ ] Verificar assinatura criptografica do `SignerInfo`
+- [ ] Identificar certificado do assinante dentro do CMS
+- [ ] Validar que o certificado do assinante corresponde ao `SignerInfo`
+- [ ] Detectar se a assinatura cobre o documento inteiro ou apenas uma revisao
+- [ ] Detectar bytes nao cobertos, gaps e cauda nao assinada
+- [ ] Validar assinaturas em PDFs com multiplas revisoes
+- [ ] Gerar status detalhado de validacao da assinatura PDF
+
+## 19.2 Analise de revisoes e modificacoes
+
+- [ ] Implementar politica de diff entre revisoes assinadas
+- [ ] Classificar modificacoes permitidas e proibidas apos assinatura
+- [ ] Validar alteracoes permitidas por DocMDP
+- [ ] Validar alteracoes permitidas por FieldMDP
+- [ ] Permitir updates legitimos de DSS e timestamps documentais
+- [ ] Rejeitar alteracoes suspeitas em objetos assinados
+- [ ] Detectar substituicao de objetos por incremental update malicioso
+- [ ] Validar cobertura da xref da revisao assinada
+- [ ] Gerar relatorio de integridade incremental do PDF
+
+## 19.3 Parser PDF robusto
+
+- [ ] Substituir regex criticas por tokenizer/parser PDF estrutural
+- [ ] Resolver objetos indiretos de forma recursiva e segura
+- [ ] Suportar geracoes de objetos diferentes de zero
+- [ ] Suportar nomes, strings, arrays e dicionarios PDF aninhados corretamente
+- [ ] Suportar streams com filtros comuns alem de FlateDecode quando necessario
+- [ ] Validar xref table contra offsets reais
+- [ ] Validar xref stream contra offsets reais
+- [ ] Suportar object streams com parsing completo
+- [ ] Suportar PDFs hibridos com xref table e xref stream
+- [ ] Suportar PDFs criptografados ou rejeita-los explicitamente
+- [ ] Criar limites contra PDF malformado, recursao infinita e objetos gigantes
+
+## 19.4 CMS/CAdES/PAdES
+
+- [ ] Validar CMS internamente sem depender apenas do comando `openssl cms`
+- [ ] Implementar parser CMS completo o suficiente para validacao PAdES
+- [ ] Validar `contentType`, `messageDigest` e `SigningCertificateV2`
+- [ ] Validar `ESSCertIDv2` contra o certificado do assinante
+- [ ] Validar `issuerSerial` contra o certificado do assinante
+- [ ] Validar algoritmo de digest e assinatura conforme politica configurada
+- [ ] Validar RSA-PSS, ECDSA e parametros ASN.1 corretamente
+- [ ] Suportar atributos assinados opcionais sem quebrar conformidade PAdES
+- [ ] Tratar `signingTime` como opcional/configuravel conforme perfil
+- [ ] Criar testes comparativos com CMS gerado pelo pyHanko
+
+## 19.5 Certificados e cadeia de confianca
+
+- [ ] Corrigir suporte a multiplas trust anchors
+- [ ] Construir cadeia X.509 por issuer/subject e Authority Key Identifier
+- [ ] Validar Basic Constraints de CAs
+- [ ] Validar Key Usage de CAs e certificado final
+- [ ] Validar Extended Key Usage quando aplicavel
+- [ ] Validar expiracao usando signing time ou timestamp confiavel
+- [ ] Validar politicas de certificado quando configuradas
+- [ ] Implementar path building com cadeias alternativas
+- [ ] Suportar AIA fetching com cache e timeout
+- [ ] Gerar resultado detalhado da cadeia de confianca
+
+## 19.6 OCSP e CRL
+
+- [ ] Implementar parser OCSP real
+- [ ] Validar assinatura da resposta OCSP
+- [ ] Validar que o responder OCSP e autorizado
+- [ ] Validar `CertID` da resposta contra o certificado consultado
+- [ ] Validar status good/revoked/unknown por certificado
+- [ ] Validar `thisUpdate`, `nextUpdate` e `producedAt`
+- [ ] Validar nonce OCSP quando enviado
+- [ ] Extrair certificados embutidos em BasicOCSPResponse
+- [ ] Implementar parser CRL real
+- [ ] Validar assinatura da CRL
+- [ ] Validar CRL issuer, AKI, nextUpdate e certificados revogados
+- [ ] Integrar OCSP/CRL com validacao de cadeia
+
+## 19.7 DSS, VRI e PAdES-LT
+
+- [ ] Criar representacao de `DocumentSecurityStore`
+- [ ] Deduplicar certificados, OCSPs e CRLs no DSS
+- [ ] Registrar VRI pelo SHA-1 dos bytes reais da assinatura
+- [ ] Validar que VRI aponta para material relacionado a assinatura correta
+- [ ] Validar DSS sem depender apenas de presenca de chaves
+- [ ] Embutir cadeia completa do assinante no DSS
+- [ ] Embutir cadeia da TSA quando houver timestamp
+- [ ] Embutir respostas OCSP/CRL verificadas no DSS
+- [ ] Atualizar DSS por incremental update preservando revisoes anteriores
+- [ ] Evitar escrever nova revisao quando DSS nao adiciona material novo
+- [ ] Criar validacao offline real de PAdES-B-LT
+
+## 19.8 Timestamp RFC 3161 e PAdES-LTA
+
+- [ ] Validar assinatura do TimeStampToken
+- [ ] Validar certificado TSA e cadeia de confianca
+- [ ] Validar EKU `id-kp-timeStamping`
+- [ ] Validar `messageImprint` contra assinatura ou documento correto
+- [ ] Validar nonce quando aplicavel
+- [ ] Validar policy OID da TSA
+- [ ] Criar assinatura `/DocTimeStamp` com cobertura correta do documento
+- [ ] Atualizar DSS antes/depois do timestamp conforme estrategia configurada
+- [ ] Implementar cadeia de archival timestamps
+- [ ] Validar ordem temporal das evidencias LTA
+- [ ] Criar renovacao de evidencias criptograficas
+
+## 19.9 Seed values, campos e aparencia
+
+- [ ] Ler e respeitar Seed Value Dictionary de campos existentes
+- [ ] Validar filtros e subfiltros exigidos pelo campo
+- [ ] Validar algoritmos exigidos pelo campo
+- [ ] Validar motivos permitidos pelo campo
+- [ ] Validar certificados permitidos pelo campo
+- [ ] Implementar locks de campo conforme FieldMDP
+- [ ] Validar campos vazios e assinados em AcroForm hierarquico
+- [ ] Suportar nomes de campo totalmente qualificados
+- [ ] Melhorar appearance stream para PDFs reais
+- [ ] Preservar Annots e Fields existentes sem sobrescrever indevidamente
+
+## 19.10 Interoperabilidade e fixtures
+
+- [ ] Rodar validacao cruzada com pyHanko em PDFs gerados pelo PHP
+- [ ] Rodar validacao cruzada do PHP em PDFs gerados pelo pyHanko
+- [ ] Adicionar fixtures reais do pyHanko como testes de leitura
+- [ ] Testar PDFs assinados uma vez, duas vezes e com DocTimeStamp
+- [ ] Testar PDFs com xref stream, object stream e incremental updates complexos
+- [ ] Testar PDFs malformados e ataques de incremental update
+- [ ] Testar com Adobe Acrobat e Adobe Reader
+- [ ] Testar com DSS Europeu
+- [ ] Testar com validadores ETSI
+- [ ] Documentar divergencias conhecidas de interoperabilidade
+
+## 19.11 Performance e seguranca operacional
+
+- [ ] Implementar assinatura e validacao por streaming
+- [ ] Evitar carregar PDF inteiro em memoria para arquivos grandes
+- [ ] Configurar limite de tamanho de PDF
+- [ ] Configurar limite de tamanho de objeto PDF
+- [ ] Configurar limite de profundidade de objetos aninhados
+- [ ] Configurar timeout de TSA, OCSP, CRL e AIA
+- [ ] Hardenizar parser ASN.1 contra entradas malformadas
+- [ ] Hardenizar parser PDF contra object injection
+- [ ] Remover arquivos temporarios com tratamento de erro robusto
+- [ ] Evitar vazamento de material sensivel em excecoes e logs
+
+## 19.12 Falhas atuais da suite
+
+- [ ] Corrigir teste de CMS comparativo que espera `signingTime`
+- [ ] Corrigir suporte a multiplas trust anchors em `X509TrustStoreTest`
+- [ ] Reexecutar `vendor/bin/phpunit` ate a suite ficar verde

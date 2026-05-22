@@ -43,7 +43,10 @@ final class CmsOpenSslStructureComparisonTest extends TestCase
 
         file_put_contents(
             $padesCmsFile,
-            (new PadesCmsSigner($certificate))->signPdfByteRangeData($data)
+            (new PadesCmsSigner(
+                certificate: $certificate,
+                includeSigningTime: true
+            ))->signPdfByteRangeData($data)
         );
 
         $this->runCommand(

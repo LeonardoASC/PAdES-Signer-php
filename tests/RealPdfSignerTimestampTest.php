@@ -15,7 +15,7 @@ final class RealPdfSignerTimestampTest extends TestCase
     public function test_it_signs_pdf_with_timestamp_token(): void
     {
         $response = file_get_contents(
-            __DIR__ . '/Output/timestamp-response.tsr'
+            __DIR__ . '/Fixtures/timestamp-response.tsr'
         );
 
         $this->assertNotFalse($response);

@@ -126,7 +126,7 @@ final class PadesLtaValidatorTest extends TestCase
 
     private function timestampClient(): TimestampClientInterface
     {
-        $response = file_get_contents(__DIR__ . '/Output/timestamp-response.tsr');
+        $response = file_get_contents(__DIR__ . '/Fixtures/timestamp-response.tsr');
         $this->assertNotFalse($response);
 
         return new class($response) implements TimestampClientInterface {

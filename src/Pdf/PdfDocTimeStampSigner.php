@@ -139,7 +139,7 @@ final readonly class PdfDocTimeStampSigner
         TimestampProviderInterface $timestampClient
     ): string {
         $signaturePlaceholder = new PdfSignaturePlaceholder();
-        $contentsRange = $signaturePlaceholder->findContentsRange($pdfContent);
+        $contentsRange = $signaturePlaceholder->findContentsObjectRange($pdfContent);
         $byteRangeCalculator = new ByteRangeCalculator();
         $byteRange = $byteRangeCalculator->calculate(
             pdfContent: $pdfContent,

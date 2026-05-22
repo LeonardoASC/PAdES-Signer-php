@@ -96,33 +96,6 @@ vendor/bin/phpunit
 
 ---
 
-## OpenSSL Verification
-
-For development and interoperability checks, extract the internal CMS signature and signed PDF byte range:
-
-```bash
-php extract.php
-php extract-signed-data.php
-```
-
-Verify the internal CMS integrity:
-
-```bash
-openssl cms -verify -binary -inform DER \
-  -in tests/Output/signature.der \
-  -content tests/Output/signed-data.bin \
-  -noverify \
-  -out tests/Output/verified-output.bin
-```
-
-Expected output:
-
-```txt
-CMS Verification successful
-```
-
----
-
 ## Current Status
 
 This project is currently experimental but already supports:

@@ -29,7 +29,7 @@ final class PdfSigningPipelineTest extends TestCase
 
         $signaturePlaceholder = new PdfSignaturePlaceholder();
 
-        $range = $signaturePlaceholder->findContentsRange($pdf);
+        $range = $signaturePlaceholder->findContentsObjectRange($pdf);
 
         $byteRangeCalculator = new ByteRangeCalculator();
 

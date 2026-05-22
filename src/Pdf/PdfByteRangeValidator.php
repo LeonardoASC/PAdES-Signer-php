@@ -34,10 +34,10 @@ final readonly class PdfByteRangeValidator
         }
 
         if (
-            ! isset($pdfContent[$contentsStart - 1])
-            || ! isset($pdfContent[$contentsEnd])
-            || $pdfContent[$contentsStart - 1] !== '<'
-            || $pdfContent[$contentsEnd] !== '>'
+            ! isset($pdfContent[$contentsStart])
+            || ! isset($pdfContent[$contentsEnd - 1])
+            || $pdfContent[$contentsStart] !== '<'
+            || $pdfContent[$contentsEnd - 1] !== '>'
         ) {
             return false;
         }

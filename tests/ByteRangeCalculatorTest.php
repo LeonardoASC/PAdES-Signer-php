@@ -17,11 +17,11 @@ final class ByteRangeCalculatorTest extends TestCase
 
         $byteRange = $calculator->calculate(
             pdfContent: $pdf,
-            contentsStart: 4,
-            contentsEnd: 10
+            contentsStart: 3,
+            contentsEnd: 11
         );
 
-        $this->assertSame('[0 4 10 4]', $byteRange->toPdfArray());
+        $this->assertSame('[0 3 11 3]', $byteRange->toPdfArray());
     }
 
     public function test_it_extracts_signed_data_excluding_contents(): void
@@ -32,12 +32,12 @@ final class ByteRangeCalculatorTest extends TestCase
 
         $byteRange = $calculator->calculate(
             pdfContent: $pdf,
-            contentsStart: 4,
-            contentsEnd: 10
+            contentsStart: 3,
+            contentsEnd: 11
         );
 
         $signedData = $calculator->extractSignedData($pdf, $byteRange);
 
-        $this->assertSame('AAA<>BBB', $signedData);
+        $this->assertSame('AAABBB', $signedData);
     }
 }

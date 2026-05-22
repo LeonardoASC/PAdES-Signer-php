@@ -84,7 +84,7 @@ final class Rfc3161TimestampValidatorTest extends TestCase
 
     private function timestampResponse(): string
     {
-        $response = file_get_contents(__DIR__ . '/Output/timestamp-response.tsr');
+        $response = file_get_contents(__DIR__ . '/Fixtures/timestamp-response.tsr');
 
         $this->assertNotFalse($response);
 

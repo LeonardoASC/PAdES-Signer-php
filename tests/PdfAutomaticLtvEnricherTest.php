@@ -41,7 +41,7 @@ final class PdfAutomaticLtvEnricherTest extends TestCase
 
     private function timestampedPdf(): string
     {
-        $response = file_get_contents(__DIR__ . '/Output/timestamp-response.tsr');
+        $response = file_get_contents(__DIR__ . '/Fixtures/timestamp-response.tsr');
         $this->assertNotFalse($response);
 
         $client = new class($response) implements TimestampClientInterface {

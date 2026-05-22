@@ -35,6 +35,31 @@ final readonly class PdfSignaturePlaceholder
         ];
     }
 
+    /**
+     * @return array{start:int,end:int}
+     */
+    public function findContentsObjectRange(string $pdfContent): array
+    {
+        $range = $this->findContentsRange($pdfContent);
+
+        $objectStart = $range['start'] - 1;
+        $objectEnd = $range['end'] + 1;
+
+        if (
+            $objectStart < 0
+            || ! isset($pdfContent[$objectStart], $pdfContent[$objectEnd - 1])
+            || $pdfContent[$objectStart] !== '<'
+            || $pdfContent[$objectEnd - 1] !== '>'
+        ) {
+            throw new RuntimeException('Delimitadores do /Contents nao encontrados no PDF.');
+        }
+
+        return [
+            'start' => $objectStart,
+            'end' => $objectEnd,
+        ];
+    }
+
     public function replaceContents(
         string $pdfContent,
         string $hexSignature

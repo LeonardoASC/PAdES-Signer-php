@@ -307,7 +307,7 @@ final readonly class RealPdfSigner
     ): string {
         $signaturePlaceholder = new PdfSignaturePlaceholder();
 
-        $contentsRange = $signaturePlaceholder->findContentsRange($pdfContent);
+        $contentsRange = $signaturePlaceholder->findContentsObjectRange($pdfContent);
 
         $byteRangeCalculator = new ByteRangeCalculator();
 

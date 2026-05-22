@@ -14,7 +14,7 @@ final class UnsignedAttributesBuilderTest extends TestCase
     public function test_it_builds_unsigned_attributes(): void
     {
         $response = file_get_contents(
-            __DIR__ . '/Output/timestamp-response.tsr'
+            __DIR__ . '/Fixtures/timestamp-response.tsr'
         );
 
         $this->assertNotFalse($response);

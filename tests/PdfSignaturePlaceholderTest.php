@@ -22,6 +22,18 @@ final class PdfSignaturePlaceholderTest extends TestCase
         $this->assertSame(23, $range['end']);
     }
 
+    public function test_it_finds_contents_object_range(): void
+    {
+        $pdf = 'abc /Contents <00000000> xyz';
+
+        $placeholder = new PdfSignaturePlaceholder();
+
+        $range = $placeholder->findContentsObjectRange($pdf);
+
+        $this->assertSame(14, $range['start']);
+        $this->assertSame(24, $range['end']);
+    }
+
     public function test_it_replaces_contents_placeholder(): void
     {
         $pdf = 'abc /Contents <00000000> xyz';

@@ -26,7 +26,7 @@ final readonly class PdfSignatureAppearance
         return "<<\n"
             . "/Type /XObject\n"
             . "/Subtype /Form\n"
-            . "/BBox [ 0 48 499 0 ]\n"
+            . "/BBox [0 0 499 48]\n"
             . "/Resources <<\n"
             . "/Font <<\n"
             . "/F1 <<\n"
