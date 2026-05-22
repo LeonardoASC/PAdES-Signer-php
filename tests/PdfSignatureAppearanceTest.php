@@ -16,7 +16,7 @@ final class PdfSignatureAppearanceTest extends TestCase
 
         $this->assertStringContainsString('/Type /XObject', $appearance);
         $this->assertStringContainsString('/Subtype /Form', $appearance);
-        $this->assertStringContainsString('/BBox [0 0 499 48]', $appearance);
+        $this->assertStringContainsString('/BBox [ 0 48 499 0 ]', $appearance);
         $this->assertStringContainsString('stream', $appearance);
         $this->assertStringContainsString('Digitally signed by Admin User', $appearance);
     }

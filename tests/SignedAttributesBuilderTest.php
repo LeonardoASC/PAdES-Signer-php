@@ -98,7 +98,7 @@ final class SignedAttributesBuilderTest extends TestCase
         );
     }
 
-    public function test_it_contains_signing_time_oid(): void
+    public function test_it_does_not_contain_signing_time_oid_by_default(): void
     {
         $certificate = new PfxCertificate(
             path: __DIR__ . '/Fixtures/certificate.pfx',
@@ -109,6 +109,26 @@ final class SignedAttributesBuilderTest extends TestCase
             ->build(
                 data: 'hello world',
                 certificatePem: $certificate->getPublicCertificate()
+            );
+
+        $this->assertStringNotContainsString(
+            hex2bin('2a864886f70d010905'),
+            $attributes
+        );
+    }
+
+    public function test_it_contains_signing_time_oid_when_enabled(): void
+    {
+        $certificate = new PfxCertificate(
+            path: __DIR__ . '/Fixtures/certificate.pfx',
+            password: '123456'
+        );
+
+        $attributes = (new SignedAttributesBuilder())
+            ->build(
+                data: 'hello world',
+                certificatePem: $certificate->getPublicCertificate(),
+                includeSigningTime: true
             );
 
         $this->assertStringContainsString(
@@ -127,7 +147,8 @@ final class SignedAttributesBuilderTest extends TestCase
         $attributes = (new SignedAttributesBuilder())
             ->build(
                 data: 'hello world',
-                certificatePem: $certificate->getPublicCertificate()
+                certificatePem: $certificate->getPublicCertificate(),
+                includeSigningTime: true
             );
 
         $contentTypePosition = strpos($attributes, hex2bin('2a864886f70d010903'));

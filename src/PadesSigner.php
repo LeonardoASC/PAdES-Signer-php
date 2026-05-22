@@ -50,7 +50,8 @@ final readonly class PadesSigner
             certificationPermission: $options->certificationPermission,
             lockedFieldNames: $options->lockedFieldNames,
             fieldLockAction: $options->fieldLockAction,
-            algorithmPolicy: $options->algorithmPolicy()
+            algorithmPolicy: $options->algorithmPolicy(),
+            includeSigningTime: $options->includeSigningTime
         );
     }
 }

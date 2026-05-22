@@ -40,7 +40,8 @@ final readonly class PadesSignatureOptions
         public string $fieldLockAction = self::FIELD_LOCK_INCLUDE,
         public string $hashAlgorithm = SignatureAlgorithmPolicy::HASH_SHA256,
         public string $signatureAlgorithm = SignatureAlgorithmPolicy::SIGNATURE_RSA,
-        public string $minimumHashAlgorithm = SignatureAlgorithmPolicy::HASH_SHA256
+        public string $minimumHashAlgorithm = SignatureAlgorithmPolicy::HASH_SHA256,
+        public bool $includeSigningTime = false
     ) {}
 
     public function algorithmPolicy(): SignatureAlgorithmPolicy

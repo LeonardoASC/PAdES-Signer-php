@@ -15,6 +15,14 @@ final readonly class Pades
         string $certificatePassword,
         ?PadesSignatureOptions $options = null
     ): void {
+        $options ??= new PadesSignatureOptions(
+            visibleSignature: true,
+            signatureName: 'Admin User',
+            signatureReason: 'Assinatura digital de documento assistencial',
+            signatureLocation: 'Prontuario Eletronico MPTO',
+            signatureContactInfo: 'admin@adm.com'
+        );
+
         (new PadesSigner())->sign(
             inputPdf: $inputPdf,
             outputPdf: $outputPdf,

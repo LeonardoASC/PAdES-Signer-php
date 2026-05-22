@@ -12,14 +12,18 @@ final readonly class SignedAttributesBuilder
     public function build(
         string $data,
         string $certificatePem,
-        SignatureAlgorithmPolicy $algorithmPolicy = new SignatureAlgorithmPolicy()
+        SignatureAlgorithmPolicy $algorithmPolicy = new SignatureAlgorithmPolicy(),
+        bool $includeSigningTime = false
     ): string {
         $attributes = [
             $this->contentTypeAttribute(),
-            $this->signingTimeAttribute(),
             $this->messageDigestAttribute($data, $algorithmPolicy),
             (new SigningCertificateV2())->attribute($certificatePem),
         ];
+
+        if ($includeSigningTime) {
+            $attributes[] = $this->signingTimeAttribute();
+        }
 
         usort(
             $attributes,

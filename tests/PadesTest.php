@@ -39,6 +39,9 @@ final class PadesTest extends TestCase
             '/Type /Sig',
             $content
         );
+        $this->assertStringContainsString('/Rect [48 48 547 96]', $content);
+        $this->assertStringContainsString('/F 132', $content);
+        $this->assertStringContainsString('/AP <<', $content);
     }
 
     public function test_it_signs_pdf_using_public_pades_signer_api(): void

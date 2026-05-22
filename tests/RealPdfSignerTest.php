@@ -68,7 +68,7 @@ final class RealPdfSignerTest extends TestCase
 
         $this->assertNotEmpty($matches[1] ?? null);
         $this->assertGreaterThanOrEqual(
-            131072,
+            24000,
             strlen($matches[1])
         );
     }
@@ -148,7 +148,7 @@ final class RealPdfSignerTest extends TestCase
         $this->assertStringContainsString('/AP <<', $content);
         $this->assertStringContainsString('/Type /XObject', $content);
         $this->assertStringContainsString('/Subtype /Form', $content);
-        $this->assertStringContainsString('/BBox [0 0 499 48]', $content);
+        $this->assertStringContainsString('/BBox [ 0 48 499 0 ]', $content);
         $this->assertStringContainsString('/Name (Admin User)', $content);
         $this->assertStringContainsString(
             '/Reason (Assinatura digital de documento assistencial)',

@@ -31,7 +31,8 @@ final readonly class PadesCmsSigner
         PfxCertificate|SignatureCredentialInterface $certificate,
         private ?TimestampProviderInterface $timestampClient = null,
         ?SignerProviderInterface $signerProvider = null,
-        private SignatureAlgorithmPolicy $algorithmPolicy = new SignatureAlgorithmPolicy()
+        private SignatureAlgorithmPolicy $algorithmPolicy = new SignatureAlgorithmPolicy(),
+        private bool $includeSigningTime = false
     ) {
         $this->signatureCredential = $certificate instanceof PfxCertificate
             ? new PfxSignatureCredential($certificate)
@@ -47,7 +48,8 @@ final readonly class PadesCmsSigner
             ->build(
                 data: $data,
                 certificatePem: $this->signatureCredential->getCertificatePem(),
-                algorithmPolicy: $this->algorithmPolicy
+                algorithmPolicy: $this->algorithmPolicy,
+                includeSigningTime: $this->includeSigningTime
             );
 
         $signedAttributesForCms = Der::contextSpecificImplicitFromEncoded(

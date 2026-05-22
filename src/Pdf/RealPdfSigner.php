@@ -15,7 +15,8 @@ use NihilLabs\Pades\Timestamp\TimestampProviderInterface;
 
 final readonly class RealPdfSigner
 {
-    private const SIGNATURE_RESERVED_BYTES = 65536;
+    private const SIGNATURE_RESERVED_BYTES = 12000;
+    private const TIMESTAMPED_SIGNATURE_RESERVED_BYTES = 24000;
 
     public function sign(
         string $inputPdf,
@@ -37,7 +38,8 @@ final readonly class RealPdfSigner
         int $certificationPermission = 2,
         array $lockedFieldNames = [],
         string $fieldLockAction = 'Include',
-        ?SignatureAlgorithmPolicy $algorithmPolicy = null
+        ?SignatureAlgorithmPolicy $algorithmPolicy = null,
+        bool $includeSigningTime = false
     ): void {
         if (! file_exists($inputPdf)) {
             throw new InvalidArgumentException("PDF de entrada não encontrado: {$inputPdf}");
@@ -151,6 +153,7 @@ final readonly class RealPdfSigner
             lockedFieldNames: $lockedFieldNames,
             fieldLockAction: $fieldLockAction
         );
+        $reservedBytes = $this->signatureReservedBytes($timestampClient);
 
         $objects = [
             $signatureObjectNumber => $this->signatureObject(
@@ -158,7 +161,8 @@ final readonly class RealPdfSigner
                 reason: $signatureReason,
                 location: $signatureLocation,
                 contactInfo: $signatureContactInfo,
-                references: $signatureReferences
+                references: $signatureReferences,
+                reservedBytes: $reservedBytes
             ),
 
             $catalogNumber => $updatedCatalog,
@@ -215,7 +219,9 @@ final readonly class RealPdfSigner
                 signatureCredential: $signatureCredential,
                 timestampClient: $timestampClient,
                 signerProvider: $signerProvider,
-                algorithmPolicy: $algorithmPolicy
+                algorithmPolicy: $algorithmPolicy,
+                reservedBytes: $reservedBytes,
+                includeSigningTime: $includeSigningTime
             );
         }
 
@@ -232,22 +238,23 @@ final readonly class RealPdfSigner
         string $reason = 'Document signed digitally',
         ?string $location = null,
         ?string $contactInfo = null,
-        string $references = ''
+        string $references = '',
+        int $reservedBytes = self::SIGNATURE_RESERVED_BYTES
     ): string
     {
         $contents = new PdfSignatureContents(
-            reservedBytes: self::SIGNATURE_RESERVED_BYTES
+            reservedBytes: $reservedBytes
         );
 
-        $date = gmdate('YmdHis');
+        $date = $this->pdfDate();
 
         $signature = "<<\n"
+            . "/Contents <" . $contents->placeholder() . ">\n"
+            . "/ByteRange [********** ********** ********** **********]\n"
             . "/Type /Sig\n"
             . "/Filter /Adobe.PPKLite\n"
             . "/SubFilter /ETSI.CAdES.detached\n"
-            . "/ByteRange [********** ********** ********** **********]\n"
-            . "/Contents <" . $contents->placeholder() . ">\n"
-            . "/M (D:{$date}+00'00')\n"
+            . "/M ({$date})\n"
             . "/Name " . $this->pdfString($name) . "\n"
             . "/Reason " . $this->pdfString($reason) . "\n";
 
@@ -275,12 +282,35 @@ final readonly class RealPdfSigner
         ) . ')';
     }
 
+    private function pdfDate(): string
+    {
+        $date = new \DateTimeImmutable(
+            'now',
+            new \DateTimeZone('America/Sao_Paulo')
+        );
+
+        $offset = $date->format('O');
+        $offsetSign = substr($offset, 0, 1);
+        $offsetHour = substr($offset, 1, 2);
+        $offsetMinute = substr($offset, 3, 2);
+
+        return sprintf(
+            'D\072%s\%s%s\047%s\047',
+            $date->format('YmdHis'),
+            $offsetSign === '-' ? '055' : '053',
+            $offsetHour,
+            $offsetMinute
+        );
+    }
+
     private function applySignature(
         string $pdfContent,
         SignatureCredentialInterface $signatureCredential,
         ?TimestampProviderInterface $timestampClient = null,
         ?SignerProviderInterface $signerProvider = null,
-        SignatureAlgorithmPolicy $algorithmPolicy = new SignatureAlgorithmPolicy()
+        SignatureAlgorithmPolicy $algorithmPolicy = new SignatureAlgorithmPolicy(),
+        int $reservedBytes = self::SIGNATURE_RESERVED_BYTES,
+        bool $includeSigningTime = false
     ): string {
         $signaturePlaceholder = new PdfSignaturePlaceholder();
 
@@ -306,13 +336,14 @@ final readonly class RealPdfSigner
             certificate: $signatureCredential,
             timestampClient: $timestampClient,
             signerProvider: $signerProvider,
-            algorithmPolicy: $algorithmPolicy
+            algorithmPolicy: $algorithmPolicy,
+            includeSigningTime: $includeSigningTime
         ))->signPdfByteRangeData(
             $signedData
         );
 
         $hexSignature = (new PdfSignatureContents(
-            reservedBytes: self::SIGNATURE_RESERVED_BYTES
+            reservedBytes: $reservedBytes
         ))
             ->encode($cms);
 
@@ -320,5 +351,13 @@ final readonly class RealPdfSigner
             $pdfContent,
             $hexSignature
         );
+    }
+
+    private function signatureReservedBytes(
+        ?TimestampProviderInterface $timestampClient
+    ): int {
+        return $timestampClient === null
+            ? self::SIGNATURE_RESERVED_BYTES
+            : self::TIMESTAMPED_SIGNATURE_RESERVED_BYTES;
     }
 }
