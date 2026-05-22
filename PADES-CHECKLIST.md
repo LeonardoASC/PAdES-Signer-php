@@ -153,82 +153,82 @@ Essa é uma das partes mais importantes do PAdES.
 8. Credenciais de Assinatura
 ## 8.1 Credenciais
 
-- [ ] Suporte a arquivo PFX/P12
-- [ ] Suporte a PEM
-- [ ] Suporte a HSM
-- [ ] Suporte a PKCS#11
-- [ ] Suporte a smartcard
-- [ ] Suporte a cloud KMS
-- [ ] Suporte a remote signing
-- [ ] Callback de assinatura externa
-- [ ] Assinatura desacoplada do storage da chave privada
+- [x] Suporte a arquivo PFX/P12
+- [x] Suporte a PEM
+- [x] Suporte a HSM
+- [x] Suporte a PKCS#11
+- [x] Suporte a smartcard
+- [x] Suporte a cloud KMS
+- [x] Suporte a remote signing
+- [x] Callback de assinatura externa
+- [x] Assinatura desacoplada do storage da chave privada
 9. Cadeia e Certificados
 ## 9.1 Cadeia X.509
 
-- [ ] Trust store plugável
-- [ ] Chain validator plugável
-- [ ] Revocation provider plugável
-- [ ] Construção de cadeia X.509
-- [ ] Suporte a múltiplas trust chains
-- [ ] Suporte a AIA fetching
-- [ ] Cache de OCSP/CRL
+- [x] Trust store plugável
+- [x] Chain validator plugável
+- [x] Revocation provider plugável
+- [x] Construção de cadeia X.509
+- [x] Suporte a múltiplas trust chains
+- [x] Suporte a AIA fetching
+- [x] Cache de OCSP/CRL
 10. Validação de Certificados
 ## 10.1 Validação Criptográfica
 
-- [ ] Validação de certificado do signatário
-- [ ] Validação de key usage
-- [ ] Validação de extended key usage
-- [ ] Validação de expiração
-- [ ] Validação temporal por signing time
-- [ ] Validação temporal por timestamp
+- [x] Validação de certificado do signatário
+- [x] Validação de key usage
+- [x] Validação de extended key usage
+- [x] Validação de expiração
+- [x] Validação temporal por signing time
+- [x] Validação temporal por timestamp
 11. Timestamp RFC 3161
 ## 11.1 Timestamp
 
-- [ ] Validação RFC 3161 completa
-- [ ] Validação de cadeia TSA
-- [ ] Validação de política TSA
-- [ ] PDF DocTimeStamp
+- [x] Validação RFC 3161 completa
+- [x] Validação de cadeia TSA
+- [x] Validação de política TSA
+- [x] PDF DocTimeStamp
 12. PAdES-B-B
 
 Primeiro perfil ETSI formal.
 
 ## 12.1 PAdES-B-B
 
-- [ ] Perfis formais PAdES Baseline
-- [ ] Perfil PAdES-B-B completo
-- [ ] Relatório PAdES por perfil
-- [ ] Validador PAdES-B-B
+- [x] Perfis formais PAdES Baseline
+- [x] Perfil PAdES-B-B completo
+- [x] Relatório PAdES por perfil
+- [x] Validador PAdES-B-B
 13. PAdES-B-T
 ## 13.1 PAdES-B-T
 
-- [ ] Perfil PAdES-B-T completo
-- [ ] Validador PAdES-B-T
+- [x] Perfil PAdES-B-T completo
+- [x] Validador PAdES-B-T
 14. DSS / VRI / LT
 ## 14.1 PAdES-LT
 
-- [ ] DSS completo
-- [ ] VRI completo
-- [ ] Hash VRI conforme perfil aplicável
-- [ ] Cadeia completa no DSS
-- [ ] OCSP completo no DSS
-- [ ] CRL completo no DSS
-- [ ] Inclusão automática de evidências LTV
-- [ ] Rebuild de DSS incremental
-- [ ] Validação offline futura
-- [ ] Perfil PAdES-B-LT completo
-- [ ] Validador PAdES-B-LT
+- [x] DSS completo
+- [x] VRI completo
+- [x] Hash VRI conforme perfil aplicável
+- [x] Cadeia completa no DSS
+- [x] OCSP completo no DSS
+- [x] CRL completo no DSS
+- [x] Inclusão automática de evidências LTV
+- [x] Rebuild de DSS incremental
+- [x] Validação offline futura
+- [x] Perfil PAdES-B-LT completo
+- [x] Validador PAdES-B-LT
 15. LTA
 
 ÚLTIMA etapa.
 
 ## 15.1 PAdES-LTA
 
-- [ ] Timestamp de documento para LTA
-- [ ] Renovação de evidências criptográficas
-- [ ] Estratégia de preservação criptográfica
-- [ ] Suporte a archival timestamp
-- [ ] Perfil PAdES-B-LTA completo
-- [ ] Validador PAdES-B-LTA
+- [x] Timestamp de documento para LTA
+- [x] Renovação de evidências criptográficas
+- [x] Estratégia de preservação criptográfica
+- [x] Suporte a archival timestamp
+- [x] Perfil PAdES-B-LTA completo
+- [x] Validador PAdES-B-LTA
 16. Interoperabilidade
 
 Somente depois do core estar estável.

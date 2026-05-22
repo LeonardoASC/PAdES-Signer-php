@@ -83,4 +83,26 @@ final readonly class PdfCatalogUpdater
 
         return $updated;
     }
+
+    public function setDss(
+        string $catalogBody,
+        int $dssObjectNumber
+    ): string {
+        if (preg_match('/\/DSS\s+\d+\s+0\s+R/', $catalogBody) === 1) {
+            $updated = preg_replace(
+                '/\/DSS\s+\d+\s+0\s+R/',
+                "/DSS {$dssObjectNumber} 0 R",
+                $catalogBody,
+                1
+            );
+
+            if ($updated === null) {
+                throw new RuntimeException('Nao foi possivel substituir /DSS no Catalog.');
+            }
+
+            return $updated;
+        }
+
+        return $this->addDss($catalogBody, $dssObjectNumber);
+    }
 }

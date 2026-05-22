@@ -41,7 +41,7 @@ final readonly class PdfLtvEnricher
             ->getCatalogObjectBody($signedPdfContent);
 
         $updatedCatalog = (new PdfCatalogUpdater())
-            ->addDss(
+            ->setDss(
                 catalogBody: $catalogBody,
                 dssObjectNumber: $dssObjects['dssObjectNumber']
             );

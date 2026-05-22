@@ -36,4 +36,23 @@ final class PadesComplianceReportTest extends TestCase
         $this->assertSame('PAdES-B-B', $report['level']);
         $this->assertTrue($report['ready']);
     }
+
+    public function test_it_reports_pades_b_t_when_signature_timestamp_token_exists(): void
+    {
+        $report = (new PadesComplianceReport())
+            ->fromInspection([
+                'is_cms_signed_data' => true,
+                'has_content_type' => true,
+                'has_message_digest' => true,
+                'has_signing_time' => true,
+                'has_signing_certificate_v2' => true,
+                'has_signature_timestamp_token' => true,
+                'is_pades_b_b_ready' => true,
+                'is_pades_b_t_ready' => true,
+            ]);
+
+        $this->assertSame('PAdES-B-T', $report['level']);
+        $this->assertTrue($report['ready']);
+        $this->assertTrue($report['checks']['signatureTimeStampToken']);
+    }
 }
