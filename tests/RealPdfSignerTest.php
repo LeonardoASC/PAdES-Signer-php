@@ -143,7 +143,7 @@ final class RealPdfSignerTest extends TestCase
         $content = file_get_contents($output);
 
         $this->assertNotFalse($content);
-        $this->assertStringContainsString('/Rect [48 48 547 96]', $content);
+        $this->assertStringContainsString('/Rect [ 48 48 547 96 ]', $content);
         $this->assertStringContainsString('/F 132', $content);
         $this->assertStringContainsString('/AP <<', $content);
         $this->assertStringContainsString('/Type /XObject', $content);

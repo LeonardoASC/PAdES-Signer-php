@@ -74,14 +74,8 @@ final readonly class RealPdfSigner
         $nextObjectNumber = $objectInspector
             ->getNextObjectNumber($content);
 
-        $signatureObjectNumber = $nextObjectNumber;
-        $widgetObjectNumber = $existingSignatureField?->objectNumber ?? $nextObjectNumber + 1;
-        $nextAvailableObjectNumber = $existingSignatureField === null
-            ? $nextObjectNumber + 2
-            : $nextObjectNumber + 1;
-        $appearanceObjectNumber = $visibleSignature
-            ? $nextAvailableObjectNumber
-            : null;
+        $nextAvailableObjectNumber = $nextObjectNumber;
+        $widgetObjectNumber = $existingSignatureField?->objectNumber ?? $nextAvailableObjectNumber++;
 
         $catalogInspector = new PdfCatalogInspector();
 
@@ -103,10 +97,6 @@ final readonly class RealPdfSigner
             $acroFormObjectNumber = $nextAvailableObjectNumber;
             $nextAvailableObjectNumber++;
 
-            if ($appearanceObjectNumber !== null) {
-                $appearanceObjectNumber = $nextAvailableObjectNumber;
-            }
-
             $updatedCatalog = $catalogUpdater->addAcroForm(
                 catalogBody: $catalogBody,
                 acroFormObjectNumber: $acroFormObjectNumber
@@ -120,6 +110,12 @@ final readonly class RealPdfSigner
                     widgetObjectNumber: $widgetObjectNumber
                 );
         }
+
+        $appearanceObjectNumber = $visibleSignature
+            ? $nextAvailableObjectNumber++
+            : null;
+
+        $signatureObjectNumber = $nextAvailableObjectNumber++;
 
         $pageInspector = new PdfPageInspector();
 
@@ -156,15 +152,6 @@ final readonly class RealPdfSigner
         $reservedBytes = $this->signatureReservedBytes($timestampClient);
 
         $objects = [
-            $signatureObjectNumber => $this->signatureObject(
-                name: $signatureName,
-                reason: $signatureReason,
-                location: $signatureLocation,
-                contactInfo: $signatureContactInfo,
-                references: $signatureReferences,
-                reservedBytes: $reservedBytes
-            ),
-
             $catalogNumber => $updatedCatalog,
         ];
 
@@ -199,6 +186,15 @@ final readonly class RealPdfSigner
             $objects[$appearanceObjectNumber] = (new PdfSignatureAppearance())
                 ->build("Digitally signed by {$signatureName}");
         }
+
+        $objects[$signatureObjectNumber] = $this->signatureObject(
+            name: $signatureName,
+            reason: $signatureReason,
+            location: $signatureLocation,
+            contactInfo: $signatureContactInfo,
+            references: $signatureReferences,
+            reservedBytes: $reservedBytes
+        );
 
         $updated = (new IncrementalPdfWriter())
             ->appendObjects(
@@ -256,14 +252,11 @@ final readonly class RealPdfSigner
             . "/SubFilter /ETSI.CAdES.detached\n"
             . "/M ({$date})\n"
             . "/Name " . $this->pdfString($name) . "\n"
+            . ($location !== null ? "/Location " . $this->pdfString($location) . "\n" : '')
             . "/Reason " . $this->pdfString($reason) . "\n";
 
         if ($references !== '') {
             $signature .= $references;
-        }
-
-        if ($location !== null) {
-            $signature .= "/Location " . $this->pdfString($location) . "\n";
         }
 
         if ($contactInfo !== null) {

@@ -96,7 +96,7 @@ final readonly class PdfSignatureStructureValidator
             ) === 1,
 
             'has_incremental_xref' => preg_match(
-                '/xref\s+\d+\s+\d+\s+\d{10}\s+\d{5}\s+n\s+/s',
+                '/xref\s+(?:0\s+1\s+0000000000\s+65535\s+f\s+)?\d+\s+\d+\s+\d{10}\s+\d{5}\s+n\s+/s',
                 $pdfContent
             ) === 1,
         ];

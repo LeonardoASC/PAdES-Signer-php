@@ -31,6 +31,8 @@ The current implementation includes:
 - Structural PDF signature validation
 - ByteRange validation
 - OpenSSL-compatible CMS verification
+- Configurable visible signature widgets
+- Basic PDF appearance stream generation
 
 ---
 
@@ -59,6 +61,28 @@ Pades::sign(
     outputPdf: 'document-signed.pdf',
     certificatePath: 'certificate.pfx',
     certificatePassword: '123456'
+);
+```
+
+Visible signature with custom placement:
+
+```php
+use NihilLabs\Pades\PadesSigner;
+use NihilLabs\Pades\PadesSignatureOptions;
+use NihilLabs\Pades\Signing\PfxSignatureCredential;
+
+(new PadesSigner())->sign(
+    inputPdf: 'document.pdf',
+    outputPdf: 'document-signed.pdf',
+    credential: new PfxSignatureCredential('certificate.pfx', '123456'),
+    options: new PadesSignatureOptions(
+        visibleSignature: true,
+        signatureRect: [48, 48, 547, 96],
+        signatureName: 'Admin User',
+        signatureReason: 'Assinatura digital',
+        signatureLocation: 'Prontuario Eletronico',
+        signatureContactInfo: 'admin@example.com'
+    )
 );
 ```
 
@@ -120,7 +144,6 @@ Adobe Acrobat recognizes generated signatures as digital signatures.
 - LTV validation
 - OCSP integration
 - CRL integration
-- Visible signatures
 - Multi-signature support
 - Certification signatures
 - Trust chain validation

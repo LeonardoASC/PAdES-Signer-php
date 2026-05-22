@@ -96,7 +96,9 @@ final readonly class IncrementalPdfWriter
     {
         ksort($offsets);
 
-        $xref = "xref\n";
+        $xref = "xref\n"
+            . "0 1\n"
+            . "0000000000 65535 f \n";
         $sectionStart = null;
         $sectionOffsets = [];
         $previousObjectNumber = null;

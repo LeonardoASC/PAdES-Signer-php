@@ -14,7 +14,7 @@ final class PdfAcroFormTest extends TestCase
         $acroForm = (new PdfAcroForm())
             ->build(widgetObjectNumber: 11);
 
-        $this->assertStringContainsString('/Fields [11 0 R]', $acroForm);
+        $this->assertStringContainsString('/Fields [ 11 0 R ]', $acroForm);
 
         $this->assertStringContainsString('/SigFlags 3', $acroForm);
     }

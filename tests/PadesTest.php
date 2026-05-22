@@ -39,7 +39,7 @@ final class PadesTest extends TestCase
             '/Type /Sig',
             $content
         );
-        $this->assertStringContainsString('/Rect [48 48 547 96]', $content);
+        $this->assertStringContainsString('/Rect [ 48 48 547 96 ]', $content);
         $this->assertStringContainsString('/F 132', $content);
         $this->assertStringContainsString('/AP <<', $content);
     }

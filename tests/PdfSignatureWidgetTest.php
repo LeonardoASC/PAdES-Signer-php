@@ -37,7 +37,7 @@ final class PdfSignatureWidgetTest extends TestCase
                 appearanceObjectNumber: 11
             );
 
-        $this->assertStringContainsString('/Rect [48 48 547 96]', $widget);
+        $this->assertStringContainsString('/Rect [ 48 48 547 96 ]', $widget);
         $this->assertStringContainsString('/F 132', $widget);
         $this->assertStringContainsString('/AP <<', $widget);
         $this->assertStringContainsString('/N 11 0 R', $widget);

@@ -9,7 +9,7 @@ final readonly class PdfAcroForm
     public function build(int $widgetObjectNumber): string
     {
         return "<<\n"
-            . "/Fields [{$widgetObjectNumber} 0 R]\n"
+            . "/Fields [ {$widgetObjectNumber} 0 R ]\n"
             . "/SigFlags 3\n"
             . ">>";
     }

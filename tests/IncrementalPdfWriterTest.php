@@ -101,7 +101,7 @@ final class IncrementalPdfWriterTest extends TestCase
         );
 
         $this->assertMatchesRegularExpression(
-            '/xref\s+7 1\s+\d{10} 00000 n\s+11 4\s+\d{10} 00000 n\s+\d{10} 00000 n\s+\d{10} 00000 n\s+\d{10} 00000 n/s',
+            '/xref\s+0 1\s+0000000000 65535 f\s+7 1\s+\d{10} 00000 n\s+11 4\s+\d{10} 00000 n\s+\d{10} 00000 n\s+\d{10} 00000 n\s+\d{10} 00000 n/s',
             $updated
         );
 

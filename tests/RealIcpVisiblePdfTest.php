@@ -48,7 +48,7 @@ final class RealIcpVisiblePdfTest extends TestCase
         $this->assertStringContainsString('/Extensions <<', $pdf);
         $this->assertStringContainsString('/ESIC <<', $pdf);
 
-        $this->assertStringContainsString('/Rect [48 48 547 96]', $pdf);
+        $this->assertStringContainsString('/Rect [ 48 48 547 96 ]', $pdf);
         $this->assertStringContainsString('/F 132', $pdf);
         $this->assertStringContainsString('/AP <<', $pdf);
         $this->assertMatchesRegularExpression('/\/N\s+\d+\s+0\s+R/', $pdf);

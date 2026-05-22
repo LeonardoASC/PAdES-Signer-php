@@ -18,13 +18,12 @@ final readonly class PdfSignatureWidget
         string $fieldName = 'Signature1'
     ): string {
         $widget = "<<\n"
+            . "/FT /Sig\n"
+            . "/T " . $this->pdfString($fieldName) . "\n"
             . "/Type /Annot\n"
             . "/Subtype /Widget\n"
-            . "/FT /Sig\n"
-            . "/Rect [" . $this->formatRect($rect) . "]\n"
-            . "/V {$signatureObjectNumber} 0 R\n"
-            . "/T " . $this->pdfString($fieldName) . "\n"
             . "/F {$flags}\n"
+            . "/Rect [ " . $this->formatRect($rect) . " ]\n"
             . "/P {$pageObjectNumber} 0 R\n";
 
         if ($appearanceObjectNumber !== null) {
@@ -33,7 +32,9 @@ final readonly class PdfSignatureWidget
                 . ">>\n";
         }
 
-        return $widget . ">>";
+        return $widget
+            . "/V {$signatureObjectNumber} 0 R\n"
+            . ">>";
     }
 
     /**
