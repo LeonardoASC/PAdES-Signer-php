@@ -17,7 +17,7 @@ final class RealIcpBasicPdfTest extends TestCase
             $this->markTestSkipped(RealIcpSignedPdfFixture::skipMessage());
         }
 
-        $input = __DIR__ . '/Fixtures/input-real.pdf';
+        $input = __DIR__ . '/Fixtures/sample.pdf';
         $output = RealIcpSignedPdfFixture::outputPath('icp-real-input-basic-output.pdf');
 
         (new MinimalPdfGenerator())->generate($input);

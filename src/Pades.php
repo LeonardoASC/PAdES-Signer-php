@@ -20,7 +20,8 @@ final readonly class Pades
             signatureName: 'Admin User',
             signatureReason: 'Assinatura digital de documento assistencial',
             signatureLocation: 'Prontuario Eletronico MPTO',
-            signatureContactInfo: 'admin@adm.com'
+            signatureContactInfo: 'admin@adm.com',
+            appendSignaturePage: true
         );
 
         (new PadesSigner())->sign(

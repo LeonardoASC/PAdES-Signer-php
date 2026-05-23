@@ -39,7 +39,9 @@ final readonly class RealPdfSigner
         array $lockedFieldNames = [],
         string $fieldLockAction = 'Include',
         ?SignatureAlgorithmPolicy $algorithmPolicy = null,
-        bool $includeSigningTime = false
+        bool $includeSigningTime = false,
+        bool $appendSignaturePage = false,
+        array $signaturePageMediaBox = [0, 0, 595, 842]
     ): void {
         if (! file_exists($inputPdf)) {
             throw new InvalidArgumentException("PDF de entrada não encontrado: {$inputPdf}");
@@ -115,23 +117,47 @@ final readonly class RealPdfSigner
             ? $nextAvailableObjectNumber++
             : null;
 
+        $signaturePageObjectNumber = $appendSignaturePage && $visibleSignature && $existingSignatureField === null
+            ? $nextAvailableObjectNumber++
+            : null;
+
         $signatureObjectNumber = $nextAvailableObjectNumber++;
 
-        $pageInspector = new PdfPageInspector();
+        if ($signaturePageObjectNumber !== null && $signatureRect === [48, 48, 547, 96]) {
+            $signatureRect = [48, 120, 547, 700];
+        }
 
-        $pageNumber = $pageInspector
-            ->getFirstPageObjectNumber($content);
+        $pageNumber = null;
+        $updatedPage = null;
+        $appendedSignaturePage = null;
 
-        $pageBody = $pageInspector
-            ->getFirstPageObjectBody($content);
+        if ($signaturePageObjectNumber !== null) {
+            $pageNumber = $signaturePageObjectNumber;
+            $appendedSignaturePage = (new PdfSignaturePageAppender())
+                ->append(
+                    structure: $structure,
+                    catalogBody: $updatedCatalog,
+                    pageObjectNumber: $signaturePageObjectNumber,
+                    widgetObjectNumber: $widgetObjectNumber,
+                    mediaBox: $signaturePageMediaBox
+                );
+        } else {
+            $pageInspector = new PdfPageInspector();
 
-        $updatedPage = $existingSignatureField === null
-            ? (new PdfPageUpdater())
-                ->addAnnotation(
-                    pageBody: $pageBody,
-                    widgetObjectNumber: $widgetObjectNumber
-                )
-            : null;
+            $pageNumber = $pageInspector
+                ->getFirstPageObjectNumber($content);
+
+            $pageBody = $pageInspector
+                ->getFirstPageObjectBody($content);
+
+            $updatedPage = $existingSignatureField === null
+                ? (new PdfPageUpdater())
+                    ->addAnnotation(
+                        pageBody: $pageBody,
+                        widgetObjectNumber: $widgetObjectNumber
+                    )
+                : null;
+        }
 
         $fieldName = $signatureFieldName
             ?? $fieldLocator->nextAvailableFieldName($structure);
@@ -182,9 +208,21 @@ final readonly class RealPdfSigner
             );
         }
 
+        if ($appendedSignaturePage !== null) {
+            $objects[$appendedSignaturePage['pagesObjectNumber']] = $appendedSignaturePage['pagesBody'];
+            $objects[$signaturePageObjectNumber] = $appendedSignaturePage['pageBody'];
+        }
+
         if ($appearanceObjectNumber !== null) {
+            $appearanceWidth = $signatureRect[2] - $signatureRect[0];
+            $appearanceHeight = $signatureRect[3] - $signatureRect[1];
+
             $objects[$appearanceObjectNumber] = (new PdfSignatureAppearance())
-                ->build("Digitally signed by {$signatureName}");
+                ->build(
+                    text: "Digitally signed by {$signatureName}",
+                    width: $appearanceWidth,
+                    height: $appearanceHeight
+                );
         }
 
         $objects[$signatureObjectNumber] = $this->signatureObject(

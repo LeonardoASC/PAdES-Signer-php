@@ -20,6 +20,7 @@ final readonly class PadesSignatureOptions
 
     /**
      * @param array{0:int,1:int,2:int,3:int} $signatureRect
+     * @param array{0:int,1:int,2:int,3:int} $signaturePageMediaBox
      * @param array<string> $lockedFieldNames
      */
     public function __construct(
@@ -41,7 +42,9 @@ final readonly class PadesSignatureOptions
         public string $hashAlgorithm = SignatureAlgorithmPolicy::HASH_SHA256,
         public string $signatureAlgorithm = SignatureAlgorithmPolicy::SIGNATURE_RSA,
         public string $minimumHashAlgorithm = SignatureAlgorithmPolicy::HASH_SHA256,
-        public bool $includeSigningTime = false
+        public bool $includeSigningTime = false,
+        public bool $appendSignaturePage = false,
+        public array $signaturePageMediaBox = [0, 0, 595, 842]
     ) {}
 
     public function algorithmPolicy(): SignatureAlgorithmPolicy

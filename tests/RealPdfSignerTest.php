@@ -163,6 +163,36 @@ final class RealPdfSignerTest extends TestCase
         $this->assertStringContainsString('/ESIC <<', $content);
     }
 
+    public function test_it_can_append_a_dedicated_page_for_visible_signature(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-visible-page-input-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-visible-page-output-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        file_put_contents($input, $this->buildPdf([
+            1 => "<< /Type /Catalog /Pages 2 0 R >>",
+            2 => "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+        ]));
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            visibleSignature: true,
+            appendSignaturePage: true
+        );
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertMatchesRegularExpression('/2\s+0\s+obj\s*<<.*\/Kids\s*\[3\s+0\s+R\s+\d+\s+0\s+R\].*\/Count\s+2.*>>\s*endobj/s', $content);
+        $this->assertMatchesRegularExpression('/\/Type\s+\/Page\s+\/Parent\s+2\s+0\s+R\s+\/MediaBox\s+\[\s+0\s+0\s+595\s+842\s+\].*\/Annots\s+\[\d+\s+0\s+R\]/s', $content);
+        $this->assertStringContainsString('/Rect [ 48 120 547 700 ]', $content);
+        $this->assertStringContainsString('/BBox [0 0 499 580]', $content);
+    }
+
     public function test_it_signs_existing_empty_named_signature_field(): void
     {
         $input = tempnam(sys_get_temp_dir(), 'pades-empty-field-');

@@ -51,7 +51,9 @@ final readonly class PadesSigner
             lockedFieldNames: $options->lockedFieldNames,
             fieldLockAction: $options->fieldLockAction,
             algorithmPolicy: $options->algorithmPolicy(),
-            includeSigningTime: $options->includeSigningTime
+            includeSigningTime: $options->includeSigningTime,
+            appendSignaturePage: $options->appendSignaturePage,
+            signaturePageMediaBox: $options->signaturePageMediaBox
         );
     }
 }

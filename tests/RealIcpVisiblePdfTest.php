@@ -17,7 +17,7 @@ final class RealIcpVisiblePdfTest extends TestCase
             $this->markTestSkipped(RealIcpSignedPdfFixture::skipMessage());
         }
 
-        $input = __DIR__ . '/Fixtures/input-real.pdf';
+        $input = __DIR__ . '/Fixtures/sample.pdf';
 
         if (! file_exists($input)) {
             $input = RealIcpSignedPdfFixture::outputPath('icp-visible-input.pdf');
@@ -25,6 +25,10 @@ final class RealIcpVisiblePdfTest extends TestCase
         }
 
         $output = RealIcpSignedPdfFixture::outputPath('icp-visible-output.pdf');
+
+        if (! is_dir(dirname($output))) {
+            mkdir(dirname($output), 0777, true);
+        }
 
         (new RealPdfSigner())->sign(
             inputPdf: $input,
@@ -36,7 +40,8 @@ final class RealIcpVisiblePdfTest extends TestCase
             signatureName: 'Admin User',
             signatureReason: 'Assinatura digital de documento assistencial',
             signatureLocation: 'Prontuario Eletronico MPTO',
-            signatureContactInfo: 'admin@adm.com'
+            signatureContactInfo: 'admin@adm.com',
+            appendSignaturePage: true
         );
 
         $pdf = file_get_contents($output);
@@ -48,13 +53,13 @@ final class RealIcpVisiblePdfTest extends TestCase
         $this->assertStringContainsString('/Extensions <<', $pdf);
         $this->assertStringContainsString('/ESIC <<', $pdf);
 
-        $this->assertStringContainsString('/Rect [ 48 48 547 96 ]', $pdf);
+        $this->assertStringContainsString('/Rect [ 48 120 547 700 ]', $pdf);
         $this->assertStringContainsString('/F 132', $pdf);
         $this->assertStringContainsString('/AP <<', $pdf);
         $this->assertMatchesRegularExpression('/\/N\s+\d+\s+0\s+R/', $pdf);
         $this->assertStringContainsString('/Type /XObject', $pdf);
         $this->assertStringContainsString('/Subtype /Form', $pdf);
-        $this->assertStringContainsString('/BBox [0 0 499 48]', $pdf);
+        $this->assertStringContainsString('/BBox [0 0 499 580]', $pdf);
 
         $this->assertStringContainsString('/Name (Admin User)', $pdf);
         $this->assertStringContainsString(

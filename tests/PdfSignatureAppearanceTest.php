@@ -18,6 +18,15 @@ final class PdfSignatureAppearanceTest extends TestCase
         $this->assertStringContainsString('/Subtype /Form', $appearance);
         $this->assertStringContainsString('/BBox [0 0 499 48]', $appearance);
         $this->assertStringContainsString('stream', $appearance);
-        $this->assertStringContainsString('Digitally signed by Admin User', $appearance);
+        $this->assertStringNotContainsString('/Font', $appearance);
+        $this->assertStringNotContainsString('/BaseFont', $appearance);
+    }
+
+    public function test_it_scales_the_appearance_to_the_signature_rectangle(): void
+    {
+        $appearance = (new PdfSignatureAppearance())
+            ->build('Digitally signed by Admin User', width: 499, height: 580);
+
+        $this->assertStringContainsString('/BBox [0 0 499 580]', $appearance);
     }
 }
