@@ -139,6 +139,8 @@ For repository hygiene rules around fixtures, generated files and local signing
 material, see [docs/HIGIENE-REPOSITORIO.md](docs/HIGIENE-REPOSITORIO.md).
 For minimum usage examples with PFX/P12, PEM, visible signatures and Git Bash
 commands, see [docs/USO-MINIMO.md](docs/USO-MINIMO.md).
+For public API usage, parameters, return values and integration guidance, see
+[docs/API-USO.md](docs/API-USO.md).
 
 ---
 

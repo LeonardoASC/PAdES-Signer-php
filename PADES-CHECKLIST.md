@@ -452,15 +452,19 @@ etapas anteriores, nao substituir validacao interna.
 
 - [ ] Testes com Adobe Acrobat
 - [ ] Testes com Adobe Reader
-- [ ] Testes com pyHanko
-- [ ] Testes com DSS Europeu
-- [ ] Testes com validadores ETSI
-- [ ] Testes de interoperabilidade internacional
+- [x] Testes com pyHanko
+- [x] Testes com DSS Europeu
+- [x] Testes com validadores ETSI
+- [x] Testes de interoperabilidade internacional
 - [ ] Compatibilidade Windows Preview
 - [ ] Compatibilidade macOS Preview
-- [ ] Rodar validacao cruzada com pyHanko em PDFs gerados pelo PHP
-- [ ] Rodar validacao cruzada do PHP em PDFs gerados pelo pyHanko
-- [ ] Documentar divergencias conhecidas de interoperabilidade
+- [x] Rodar validacao cruzada com pyHanko em PDFs gerados pelo PHP
+- [x] Rodar validacao cruzada do PHP em PDFs gerados pelo pyHanko
+- [x] Documentar divergencias conhecidas de interoperabilidade
+
+Resultado manual registrado: B-B, B-T e B-LT aprovados em validador externo;
+B-LTA ficou indeterminado com FreeTSA, sem `HASH_FAILURE`, pendente de TSA/trust
+store adequada para archival timestamp.
 
 ## 23.2 Fixtures de conformidade
 
