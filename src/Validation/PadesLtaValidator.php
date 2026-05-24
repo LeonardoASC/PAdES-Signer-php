@@ -22,6 +22,8 @@ final readonly class PadesLtaValidator
             ...$lt->checks,
             'document_timestamp' => $this->docTimeStampInspector->hasDocumentTimestamp($pdfContent),
             'archival_timestamp_after_dss' => $this->docTimeStampInspector->isLatestRevisionAfterDss($pdfContent),
+            'archival_timestamp_covers_latest_revision' => $this->docTimeStampInspector->latestTimestampCoversLatestRevision($pdfContent),
+            'archival_timestamp_chain_ordered' => $this->docTimeStampInspector->archivalTimestampChainIsOrdered($pdfContent),
             'archival_timestamp_token_valid' => false,
         ];
         $messages = $lt->messages;
@@ -43,11 +45,21 @@ final readonly class PadesLtaValidator
             $messages[] = 'Requisito PAdES-B-LTA ausente: archival_timestamp_after_dss.';
         }
 
+        if (! $checks['archival_timestamp_covers_latest_revision']) {
+            $messages[] = 'Requisito PAdES-B-LTA ausente: archival_timestamp_covers_latest_revision.';
+        }
+
+        if (! $checks['archival_timestamp_chain_ordered']) {
+            $messages[] = 'Requisito PAdES-B-LTA ausente: archival_timestamp_chain_ordered.';
+        }
+
         return new PadesProfileValidationResult(
             profile: PadesBaselineProfile::B_LTA,
             valid: $lt->valid
                 && $checks['document_timestamp']
                 && $checks['archival_timestamp_after_dss']
+                && $checks['archival_timestamp_covers_latest_revision']
+                && $checks['archival_timestamp_chain_ordered']
                 && $checks['archival_timestamp_token_valid']
                 && $messages === [],
             checks: $checks,

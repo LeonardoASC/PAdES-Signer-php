@@ -35,6 +35,8 @@ final class PadesLtaValidatorTest extends TestCase
         $this->assertTrue($result->valid, implode("\n", $result->messages));
         $this->assertTrue($result->checks['document_timestamp']);
         $this->assertTrue($result->checks['archival_timestamp_after_dss']);
+        $this->assertTrue($result->checks['archival_timestamp_covers_latest_revision']);
+        $this->assertTrue($result->checks['archival_timestamp_chain_ordered']);
         $this->assertTrue($result->checks['archival_timestamp_token_valid']);
     }
 
@@ -73,8 +75,30 @@ final class PadesLtaValidatorTest extends TestCase
             (new PdfDocTimeStampInspector())->documentTimestampCount($renewed)
         );
         $this->assertTrue(
+            (new PdfDocTimeStampInspector())->archivalTimestampChainIsOrdered($renewed)
+        );
+        $this->assertTrue(
             (new PadesLtaValidator())->validatePdf($renewed)->valid
         );
+    }
+
+    public function test_it_builds_a_chain_of_archive_timestamps(): void
+    {
+        $first = (new PdfLtaEnricher())->addArchiveTimestamp(
+            ltPdfContent: $this->ltPdf(),
+            timestampProvider: $this->timestampClient(),
+            fieldName: 'ArchiveTimeStamp1'
+        );
+        $second = (new PdfLtaEnricher())->addArchiveTimestamp(
+            ltPdfContent: $first,
+            timestampProvider: $this->timestampClient(),
+            fieldName: 'ArchiveTimeStamp2'
+        );
+        $inspector = new PdfDocTimeStampInspector();
+
+        $this->assertSame(2, $inspector->documentTimestampCount($second));
+        $this->assertTrue($inspector->latestTimestampCoversLatestRevision($second));
+        $this->assertTrue($inspector->archivalTimestampChainIsOrdered($second));
     }
 
     public function test_preservation_strategy_decides_when_to_renew(): void

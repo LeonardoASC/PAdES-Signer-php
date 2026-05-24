@@ -33,19 +33,19 @@ final readonly class PdfDssObjectBuilder
         $certObjectNumbers = $this->appendDerStreamObjects(
             objects: $objects,
             nextObjectNumber: $nextObjectNumber,
-            derObjects: $material->certificatesDer
+            derObjects: $this->uniqueDerObjects($material->certificatesDer)
         );
 
         $ocspObjectNumbers = $this->appendDerStreamObjects(
             objects: $objects,
             nextObjectNumber: $nextObjectNumber,
-            derObjects: $material->ocspResponsesDer
+            derObjects: $this->uniqueDerObjects($material->ocspResponsesDer)
         );
 
         $crlObjectNumbers = $this->appendDerStreamObjects(
             objects: $objects,
             nextObjectNumber: $nextObjectNumber,
-            derObjects: $material->crlsDer
+            derObjects: $this->uniqueDerObjects($material->crlsDer)
         );
 
         $certReferences = $this->references($certObjectNumbers);
@@ -121,5 +121,28 @@ final readonly class PdfDssObjectBuilder
             static fn (int $objectNumber): string => "{$objectNumber} 0 R",
             $objectNumbers
         );
+    }
+
+    /**
+     * @param array<string> $derObjects
+     * @return array<string>
+     */
+    private function uniqueDerObjects(array $derObjects): array
+    {
+        $unique = [];
+        $seen = [];
+
+        foreach ($derObjects as $derObject) {
+            $hash = hash('sha256', $derObject);
+
+            if (isset($seen[$hash])) {
+                continue;
+            }
+
+            $seen[$hash] = true;
+            $unique[] = $derObject;
+        }
+
+        return $unique;
     }
 }

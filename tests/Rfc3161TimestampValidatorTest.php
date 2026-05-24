@@ -7,6 +7,7 @@ namespace NihilLabs\Pades\Tests;
 use NihilLabs\Pades\Crypto\Timestamp\Rfc3161TimestampTokenParser;
 use NihilLabs\Pades\Crypto\Timestamp\Rfc3161TimestampValidationPolicy;
 use NihilLabs\Pades\Crypto\Timestamp\Rfc3161TimestampValidator;
+use NihilLabs\Pades\Crypto\Timestamp\TimestampResponseParser;
 use NihilLabs\Pades\Crypto\X509\InMemoryTrustStore;
 use PHPUnit\Framework\TestCase;
 
@@ -82,6 +83,52 @@ final class Rfc3161TimestampValidatorTest extends TestCase
         $this->assertTrue($result->valid, implode("\n", $result->messages));
     }
 
+    public function test_it_rejects_unexpected_nonce(): void
+    {
+        $result = (new Rfc3161TimestampValidator())->validateResponse(
+            responseDer: $this->timestampResponse(),
+            policy: new Rfc3161TimestampValidationPolicy(
+                expectedNonce: 'wrong-nonce'
+            )
+        );
+
+        $this->assertFalse($result->valid);
+        $this->assertContains(
+            'Nonce RFC 3161 nao corresponde ao valor esperado.',
+            $result->messages
+        );
+    }
+
+    public function test_it_rejects_unexpected_message_data(): void
+    {
+        $result = (new Rfc3161TimestampValidator())->validateResponse(
+            responseDer: $this->timestampResponse(),
+            policy: new Rfc3161TimestampValidationPolicy(
+                expectedMessage: 'wrong timestamped data'
+            )
+        );
+
+        $this->assertFalse($result->valid);
+        $this->assertContains(
+            'MessageImprint RFC 3161 nao corresponde aos dados esperados.',
+            $result->messages
+        );
+    }
+
+    public function test_it_rejects_tampered_timestamp_token_signature(): void
+    {
+        $token = (new TimestampResponseParser())->extractToken($this->timestampResponse());
+        $tampered = substr_replace($token, ~$token[-1], -1);
+
+        $result = (new Rfc3161TimestampValidator())->validateToken($tampered);
+
+        $this->assertFalse($result->valid);
+        $this->assertContains(
+            'Assinatura criptografica do TimeStampToken RFC 3161 invalida.',
+            $result->messages
+        );
+    }
+
     private function timestampResponse(): string
     {
         $response = file_get_contents(__DIR__ . '/Fixtures/timestamp-response.tsr');
@@ -90,4 +137,5 @@ final class Rfc3161TimestampValidatorTest extends TestCase
 
         return $response;
     }
+
 }

@@ -16,6 +16,7 @@ final readonly class Rfc3161TimestampTokenInfo
         public string $hashedMessage,
         public \DateTimeImmutable $genTime,
         public ?string $nonce = null,
-        public array $certificatesPem = []
+        public array $certificatesPem = [],
+        public string $tokenDer = ''
     ) {}
 }

@@ -12,9 +12,13 @@ final readonly class Rfc3161TimestampValidationPolicy
      * @param array<string> $allowedPolicyOids
      */
     public function __construct(
+        public ?string $expectedMessage = null,
         public ?string $expectedMessageImprint = null,
+        public ?string $expectedNonce = null,
         public array $allowedPolicyOids = [],
         public ?TrustStoreInterface $tsaTrustStore = null,
-        public bool $requireTsaChainValidation = false
+        public bool $requireTsaChainValidation = false,
+        public bool $requireTokenSignatureValidation = true,
+        public bool $requireTsaExtendedKeyUsage = true
     ) {}
 }

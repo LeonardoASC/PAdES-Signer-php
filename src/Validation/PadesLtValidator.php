@@ -33,6 +33,7 @@ final readonly class PadesLtValidator
             'dss_catalog_reference' => (bool) $dss['has_dss_reference'],
             'vri_dictionary' => (bool) $dss['has_vri_dictionary'],
             'vri_hash_matches_signature' => (bool) $dss['has_expected_vri_hash'],
+            'vri_references_validation_material' => (bool) $dss['vri_references_validation_material'],
             'dss_certificate_chain' => (bool) $dss['has_certificates'],
             'dss_ocsp_responses' => (bool) $dss['has_ocsp_responses'],
             'dss_crls' => (bool) $dss['has_crls'],
@@ -51,6 +52,7 @@ final readonly class PadesLtValidator
             valid: $bt->valid
                 && (bool) $dss['complete_lt_material']
                 && (bool) $dss['has_expected_vri_hash']
+                && (bool) $dss['vri_references_validation_material']
                 && $messages === [],
             checks: $checks,
             messages: $messages

@@ -43,10 +43,15 @@ final class PadesLtValidatorTest extends TestCase
         $this->assertTrue($result->checks['dss_dictionary']);
         $this->assertTrue($result->checks['vri_dictionary']);
         $this->assertTrue($result->checks['vri_hash_matches_signature']);
+        $this->assertTrue($result->checks['vri_references_validation_material']);
         $this->assertTrue($result->checks['dss_certificate_chain']);
         $this->assertTrue($result->checks['dss_ocsp_responses']);
         $this->assertTrue($result->checks['dss_crls']);
         $this->assertTrue($result->checks['offline_validation_ready']);
+
+        $store = (new PdfDssInspector())->extract($enrichedPdf);
+
+        $this->assertGreaterThan(1, count($store->certReferences));
     }
 
     public function test_it_rejects_b_t_pdf_without_dss(): void

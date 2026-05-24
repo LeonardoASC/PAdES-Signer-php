@@ -7,6 +7,7 @@ namespace NihilLabs\Pades\Tests;
 use NihilLabs\Pades\Internal\Crypto\PadesCmsVerifier;
 use NihilLabs\Pades\Crypto\Validation\LtvValidationMaterial;
 use NihilLabs\Pades\Pdf\IncrementalPdfWriter;
+use NihilLabs\Pades\Pdf\Dss\PdfDssInspector;
 use NihilLabs\Pades\Pdf\PdfByteRangeValidator;
 use NihilLabs\Pades\Pdf\PdfCatalogInspector;
 use NihilLabs\Pades\Pdf\PdfLtvEnricher;
@@ -73,5 +74,34 @@ final class PdfLtvEnricherTest extends TestCase
                     signedData: $parts['signedData']
                 )
         );
+    }
+
+    public function test_it_does_not_write_new_revision_when_dss_material_is_unchanged(): void
+    {
+        $signedPdf = SignedPdfFixture::signedPdfContent(
+            'pdf-ltv-enricher-idempotent'
+        );
+        $material = new LtvValidationMaterial(
+            certificatesDer: ["\x30\x01\x01"],
+            ocspResponsesDer: ["\x30\x01\x02"],
+            crlsDer: ["\x30\x01\x03"]
+        );
+        $enricher = new PdfLtvEnricher();
+
+        $enrichedPdf = $enricher->enrich(
+            signedPdfContent: $signedPdf,
+            material: $material
+        );
+        $again = $enricher->enrich(
+            signedPdfContent: $enrichedPdf,
+            material: $material
+        );
+
+        $this->assertSame($enrichedPdf, $again);
+
+        $inspection = (new PdfDssInspector())->inspect($again);
+
+        $this->assertTrue($inspection['has_dss_dictionary']);
+        $this->assertTrue($inspection['has_vri_dictionary']);
     }
 }

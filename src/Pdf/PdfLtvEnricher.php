@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Pdf;
 
 use InvalidArgumentException;
+use NihilLabs\Pades\Crypto\Timestamp\Rfc3161TimestampTokenParser;
+use NihilLabs\Pades\Crypto\X509\CertificateFormatNormalizer;
 use NihilLabs\Pades\Crypto\Validation\LtvValidationMaterial;
+use NihilLabs\Pades\Internal\Crypto\Cades\SignatureTimestampTokenExtractor;
+use NihilLabs\Pades\Pdf\Dss\PdfDssInspector;
 use NihilLabs\Pades\Pdf\Dss\PdfDssObjectBuilder;
 use RuntimeException;
 
@@ -23,13 +27,20 @@ final readonly class PdfLtvEnricher
             throw new InvalidArgumentException('Input PDF does not contain a signature ByteRange.');
         }
 
+        $material = $this->materialWithTimestampCertificates($signedPdfContent, $material);
+        $vriHash = $this->signatureVriHash($signedPdfContent);
+
+        if ($this->alreadyContainsMaterial($signedPdfContent, $material, $vriHash)) {
+            return $signedPdfContent;
+        }
+
         $objectInspector = new PdfObjectInspector();
 
         $dssObjects = (new PdfDssObjectBuilder())
             ->build(
                 firstObjectNumber: $objectInspector->getNextObjectNumber($signedPdfContent),
                 material: $material,
-                vriHash: $this->signatureVriHash($signedPdfContent)
+                vriHash: $vriHash
             );
 
         $catalogInspector = new PdfCatalogInspector();
@@ -85,5 +96,86 @@ final readonly class PdfLtvEnricher
             ->extractBinarySignatureWithoutPadding($signedPdfContent);
 
         return strtoupper(hash('sha1', $signature));
+    }
+
+    private function materialWithTimestampCertificates(
+        string $signedPdfContent,
+        LtvValidationMaterial $material
+    ): LtvValidationMaterial {
+        try {
+            $cms = (new PdfSignatureExtractor())->extractBinarySignatureWithoutPadding($signedPdfContent);
+            $token = (new SignatureTimestampTokenExtractor())->extract($cms);
+            $info = (new Rfc3161TimestampTokenParser())->parseToken($token);
+        } catch (RuntimeException) {
+            return $this->uniqueMaterial($material);
+        }
+
+        $normalizer = new CertificateFormatNormalizer();
+        $timestampCertificatesDer = array_map(
+            static fn (string $certificatePem): string => $normalizer->normalizeToDer($certificatePem),
+            $info->certificatesPem
+        );
+
+        return $this->uniqueMaterial(new LtvValidationMaterial(
+            certificatesDer: [...$material->certificatesDer, ...$timestampCertificatesDer],
+            ocspResponsesDer: $material->ocspResponsesDer,
+            crlsDer: $material->crlsDer
+        ));
+    }
+
+    private function alreadyContainsMaterial(
+        string $signedPdfContent,
+        LtvValidationMaterial $material,
+        string $vriHash
+    ): bool {
+        $inspection = (new PdfDssInspector())->inspect($signedPdfContent, $vriHash);
+
+        if (! (bool) $inspection['offline_validation_ready']) {
+            return false;
+        }
+
+        foreach ([
+            ...$material->certificatesDer,
+            ...$material->ocspResponsesDer,
+            ...$material->crlsDer,
+        ] as $der) {
+            if (! str_contains($signedPdfContent, $der)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function uniqueMaterial(LtvValidationMaterial $material): LtvValidationMaterial
+    {
+        return new LtvValidationMaterial(
+            certificatesDer: $this->uniqueDerObjects($material->certificatesDer),
+            ocspResponsesDer: $this->uniqueDerObjects($material->ocspResponsesDer),
+            crlsDer: $this->uniqueDerObjects($material->crlsDer)
+        );
+    }
+
+    /**
+     * @param array<string> $derObjects
+     * @return array<string>
+     */
+    private function uniqueDerObjects(array $derObjects): array
+    {
+        $unique = [];
+        $seen = [];
+
+        foreach ($derObjects as $derObject) {
+            $hash = hash('sha256', $derObject);
+
+            if (isset($seen[$hash])) {
+                continue;
+            }
+
+            $seen[$hash] = true;
+            $unique[] = $derObject;
+        }
+
+        return $unique;
     }
 }

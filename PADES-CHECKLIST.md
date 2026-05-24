@@ -396,34 +396,34 @@ evidencias embutidas sao verificadas de verdade.
 
 ## 21.1 Timestamp RFC 3161
 
-- [ ] Validar assinatura do TimeStampToken
-- [ ] Validar certificado TSA e cadeia de confianca
-- [ ] Validar EKU `id-kp-timeStamping`
-- [ ] Validar `messageImprint` contra assinatura ou documento correto
-- [ ] Validar nonce quando aplicavel
-- [ ] Validar policy OID da TSA
+- [x] Validar assinatura do TimeStampToken
+- [x] Validar certificado TSA e cadeia de confianca
+- [x] Validar EKU `id-kp-timeStamping`
+- [x] Validar `messageImprint` contra assinatura ou documento correto
+- [x] Validar nonce quando aplicavel
+- [x] Validar policy OID da TSA
 
 ## 21.2 DSS e PAdES-LT
 
-- [ ] Criar representacao de `DocumentSecurityStore`
-- [ ] Deduplicar certificados, OCSPs e CRLs no DSS
-- [ ] Registrar VRI pelo SHA-1 dos bytes reais da assinatura
-- [ ] Validar que VRI aponta para material relacionado a assinatura correta
-- [ ] Validar DSS sem depender apenas de presenca de chaves
-- [ ] Embutir cadeia completa do assinante no DSS
-- [ ] Embutir cadeia da TSA quando houver timestamp
-- [ ] Embutir respostas OCSP/CRL verificadas no DSS
-- [ ] Atualizar DSS por incremental update preservando revisoes anteriores
-- [ ] Evitar escrever nova revisao quando DSS nao adiciona material novo
-- [ ] Criar validacao offline real de PAdES-B-LT
+- [x] Criar representacao de `DocumentSecurityStore`
+- [x] Deduplicar certificados, OCSPs e CRLs no DSS
+- [x] Registrar VRI pelo SHA-1 dos bytes reais da assinatura
+- [x] Validar que VRI aponta para material relacionado a assinatura correta
+- [x] Validar DSS sem depender apenas de presenca de chaves
+- [x] Embutir cadeia completa do assinante no DSS
+- [x] Embutir cadeia da TSA quando houver timestamp
+- [x] Embutir respostas OCSP/CRL verificadas no DSS
+- [x] Atualizar DSS por incremental update preservando revisoes anteriores
+- [x] Evitar escrever nova revisao quando DSS nao adiciona material novo
+- [x] Criar validacao offline real de PAdES-B-LT
 
 ## 21.3 PAdES-LTA
 
-- [ ] Criar assinatura `/DocTimeStamp` com cobertura correta do documento
-- [ ] Atualizar DSS antes/depois do timestamp conforme estrategia configurada
-- [ ] Implementar cadeia de archival timestamps
-- [ ] Validar ordem temporal das evidencias LTA
-- [ ] Criar renovacao de evidencias criptograficas
+- [x] Criar assinatura `/DocTimeStamp` com cobertura correta do documento
+- [x] Atualizar DSS antes/depois do timestamp conforme estrategia configurada
+- [x] Implementar cadeia de archival timestamps
+- [x] Validar ordem temporal das evidencias LTA
+- [x] Criar renovacao de evidencias criptograficas
 
 22. Campos, seed values e formularios
 

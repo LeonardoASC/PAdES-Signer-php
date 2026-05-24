@@ -51,7 +51,8 @@ final readonly class Rfc3161TimestampTokenParser
             hashedMessage: $tstInfo['hashedMessage'],
             genTime: $tstInfo['genTime'],
             nonce: $tstInfo['nonce'],
-            certificatesPem: $this->certificates($signedData)
+            certificatesPem: $this->certificates($signedData),
+            tokenDer: $tokenDer
         );
     }
 

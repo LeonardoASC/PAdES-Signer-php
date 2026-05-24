@@ -35,4 +35,23 @@ final class PdfDssObjectBuilderTest extends TestCase
         $this->assertStringContainsString('/CRLs [22 0 R]', $result['objects'][23]);
         $this->assertStringContainsString('/AABBCC <<', $result['objects'][23]);
     }
+
+    public function test_it_deduplicates_validation_material_objects(): void
+    {
+        $result = (new PdfDssObjectBuilder())
+            ->build(
+                firstObjectNumber: 20,
+                material: new LtvValidationMaterial(
+                    certificatesDer: ["\x30\x01\x01", "\x30\x01\x01"],
+                    ocspResponsesDer: ["\x30\x01\x02", "\x30\x01\x02"],
+                    crlsDer: ["\x30\x01\x03", "\x30\x01\x03"]
+                ),
+                vriHash: 'AABBCC'
+            );
+
+        $this->assertSame([20], $result['certObjectNumbers']);
+        $this->assertSame([21], $result['ocspObjectNumbers']);
+        $this->assertSame([22], $result['crlObjectNumbers']);
+        $this->assertSame(23, $result['dssObjectNumber']);
+    }
 }
