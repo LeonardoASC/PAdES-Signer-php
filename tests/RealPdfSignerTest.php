@@ -409,6 +409,56 @@ final class RealPdfSignerTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/7\s+0\s+obj\s*<<.*\/Subtype\s*\/Widget\b/s', $content);
     }
 
+    public function test_it_respects_seed_values_and_lock_dictionary_on_existing_field(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-seed-field-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-seed-output-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        file_put_contents($input, $this->buildPdfWithHierarchicalSeededSignatureField());
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            signatureFieldName: 'Section.Approval',
+            signatureReason: 'Approved',
+            algorithmPolicy: new SignatureAlgorithmPolicy(
+                hashAlgorithm: SignatureAlgorithmPolicy::HASH_SHA256
+            )
+        );
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertMatchesRegularExpression('/6\s+0\s+obj\s*<<.*\/V\s+7\s+0\s+R.*>>\s*endobj/s', $content);
+        $this->assertStringContainsString('/TransformMethod /FieldMDP', $content);
+        $this->assertStringContainsString('/Action /Include', $content);
+        $this->assertStringContainsString('/Fields [(Amount) (Section.Approval)]', $content);
+    }
+
+    public function test_it_rejects_seed_value_reason_not_allowed_by_field(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-seed-reject-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-seed-reject-output-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        file_put_contents($input, $this->buildPdfWithHierarchicalSeededSignatureField());
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Seed Value Dictionary nao permite o motivo de assinatura configurado.');
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            signatureFieldName: 'Section.Approval',
+            signatureReason: 'Rejected'
+        );
+    }
+
     public function test_it_generates_approval_signature_by_default(): void
     {
         $input = tempnam(sys_get_temp_dir(), 'pades-approval-input-');
@@ -657,6 +707,18 @@ final class RealPdfSignerTest extends TestCase
             3 => "<< /Type /Page /Parent 2 0 R /Annots [4 0 R] /MediaBox [0 0 612 792] >>",
             4 => "<< /Type /Annot /Subtype /Widget /FT /Sig /Rect [0 0 0 0] /T (Approval) /F 4 /P 3 0 R >>",
             5 => "<< /Fields [4 0 R] /SigFlags 3 >>",
+        ]);
+    }
+
+    private function buildPdfWithHierarchicalSeededSignatureField(): string
+    {
+        return $this->buildPdf([
+            1 => "<< /Type /Catalog /Pages 2 0 R /AcroForm 5 0 R >>",
+            2 => "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            3 => "<< /Type /Page /Parent 2 0 R /Annots [6 0 R] /MediaBox [0 0 612 792] >>",
+            4 => "<< /FT /Sig /T (Section) /Kids [6 0 R] /SV << /Filter [/Adobe.PPKLite] /SubFilter [/ETSI.CAdES.detached] /DigestMethod [/SHA256] /Reasons [(Approved)] >> /Lock << /Action /Include /Fields [(Amount) (Section.Approval)] >> >>",
+            5 => "<< /Fields [4 0 R] /SigFlags 3 >>",
+            6 => "<< /Type /Annot /Subtype /Widget /Parent 4 0 R /Rect [0 0 0 0] /T (Approval) /F 4 /P 3 0 R >>",
         ]);
     }
 

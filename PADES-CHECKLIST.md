@@ -432,16 +432,16 @@ podem vir depois do core de validacao e LTV.
 
 ## 22.1 Seed values, campos e locks
 
-- [ ] Ler e respeitar Seed Value Dictionary de campos existentes
-- [ ] Validar filtros e subfiltros exigidos pelo campo
-- [ ] Validar algoritmos exigidos pelo campo
-- [ ] Validar motivos permitidos pelo campo
-- [ ] Validar certificados permitidos pelo campo
-- [ ] Implementar locks de campo conforme FieldMDP
-- [ ] Validar campos vazios e assinados em AcroForm hierarquico
-- [ ] Suportar nomes de campo totalmente qualificados
-- [ ] Melhorar appearance stream para PDFs reais
-- [ ] Preservar Annots e Fields existentes sem sobrescrever indevidamente
+- [x] Ler e respeitar Seed Value Dictionary de campos existentes
+- [x] Validar filtros e subfiltros exigidos pelo campo
+- [x] Validar algoritmos exigidos pelo campo
+- [x] Validar motivos permitidos pelo campo
+- [x] Validar certificados permitidos pelo campo
+- [x] Implementar locks de campo conforme FieldMDP
+- [x] Validar campos vazios e assinados em AcroForm hierarquico
+- [x] Suportar nomes de campo totalmente qualificados
+- [x] Melhorar appearance stream para PDFs reais
+- [x] Preservar Annots e Fields existentes sem sobrescrever indevidamente
 
 23. Interoperabilidade e fixtures
 

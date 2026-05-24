@@ -10,6 +10,8 @@ final readonly class PdfSignatureField
         public int $objectNumber,
         public string $body,
         public ?string $name = null,
-        public ?int $pageObjectNumber = null
+        public ?int $pageObjectNumber = null,
+        public ?PdfSeedValueDictionary $seedValue = null,
+        public ?PdfSignatureFieldLock $lock = null
     ) {}
 }

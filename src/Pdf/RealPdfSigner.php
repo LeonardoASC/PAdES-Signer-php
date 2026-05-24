@@ -60,6 +60,13 @@ final readonly class RealPdfSigner
 
         $algorithmPolicy ??= SignatureAlgorithmPolicy::default();
 
+        if ($signatureCredential === null && $certificatePath !== null && $certificatePassword !== null) {
+            $signatureCredential = new PfxSignatureCredential(
+                pathOrCertificate: $certificatePath,
+                password: $certificatePassword
+            );
+        }
+
         $isCertificationSignature = $signatureType === 'certification';
 
         if ($isCertificationSignature && (new PdfSignatureFieldInspector())->hasSignatures($content)) {
@@ -71,6 +78,14 @@ final readonly class RealPdfSigner
         $existingSignatureField = $signatureFieldName === null
             ? null
             : $fieldLocator->findEmptySignatureField($structure, $signatureFieldName);
+
+        if ($existingSignatureField !== null && $existingSignatureField->seedValue !== null) {
+            $existingSignatureField->seedValue->validate(
+                algorithmPolicy: $algorithmPolicy,
+                signatureReason: $signatureReason,
+                certificatePem: $signatureCredential?->getCertificatePem()
+            );
+        }
 
         $objectInspector = new PdfObjectInspector();
 
@@ -170,11 +185,17 @@ final readonly class RealPdfSigner
             );
         }
 
+        $fieldLock = $existingSignatureField?->lock;
+        $fieldLockActionForReference = $fieldLock?->action ?? $fieldLockAction;
+        $lockedFieldNamesForReference = $fieldLock !== null
+            ? $fieldLock->fieldNames
+            : $lockedFieldNames;
+
         $signatureReferences = (new PdfSignatureReferenceBuilder())->build(
             catalogObjectNumber: $catalogNumber,
             certificationPermission: $isCertificationSignature ? $certificationPermission : null,
-            lockedFieldNames: $lockedFieldNames,
-            fieldLockAction: $fieldLockAction
+            lockedFieldNames: $lockedFieldNamesForReference,
+            fieldLockAction: $fieldLockActionForReference
         );
         $reservedBytes = $this->signatureReservedBytes($timestampClient);
 
@@ -248,13 +269,6 @@ final readonly class RealPdfSigner
                 pdfContent: $content,
                 objects: $objects
             );
-
-        if ($signatureCredential === null && $certificatePath !== null && $certificatePassword !== null) {
-            $signatureCredential = new PfxSignatureCredential(
-                pathOrCertificate: $certificatePath,
-                password: $certificatePassword
-            );
-        }
 
         if ($signatureCredential !== null) {
             $updated = $this->applySignature(
