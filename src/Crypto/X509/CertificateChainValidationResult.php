@@ -9,11 +9,13 @@ final readonly class CertificateChainValidationResult
     /**
      * @param array<string> $chainPem
      * @param array<string> $messages
+     * @param array<string, mixed> $details
      */
     public function __construct(
         public bool $trusted,
         public array $chainPem,
         public ?string $trustAnchorPem = null,
-        public array $messages = []
+        public array $messages = [],
+        public array $details = []
     ) {}
 }

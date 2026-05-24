@@ -10,7 +10,10 @@ final readonly class OpenSslCertificateChainValidator implements CertificateChai
 {
     public function __construct(
         private ?RealCertificateChainCollector $chainCollector = null,
-        private ?CertificateFormatNormalizer $normalizer = null
+        private ?CertificateFormatNormalizer $normalizer = null,
+        private ?CertificatePathBuilder $pathBuilder = null,
+        private ?CertificateValidationContext $context = null,
+        private ?CertificateValidationPolicy $policy = null
     ) {}
 
     public function validateCredential(
@@ -37,9 +40,9 @@ final readonly class OpenSslCertificateChainValidator implements CertificateChai
             signerCertificatePem: $signerCertificatePem,
             candidateCertificatesPem: $candidateCertificatesPem
         );
-        $chain = $chainData['chain'];
+        $collectedChain = $chainData['chain'];
 
-        if ($chain === []) {
+        if ($collectedChain === []) {
             return new CertificateChainValidationResult(
                 trusted: false,
                 chainPem: [],
@@ -47,28 +50,62 @@ final readonly class OpenSslCertificateChainValidator implements CertificateChai
             );
         }
 
-        foreach ($this->trustedCandidates($trustStore) as $trustAnchorPem) {
-            $candidateChain = $this->chainWithTrustAnchor($chain, $trustAnchorPem);
+        $signerValidation = (new X509CertificateValidator())->validate(
+            certificatePem: $signerCertificatePem,
+            context: $this->context ?? new CertificateValidationContext(),
+            policy: $this->policy ?? new CertificateValidationPolicy()
+        );
 
-            if ($candidateChain === null) {
-                continue;
-            }
+        if (! $signerValidation->valid) {
+            return new CertificateChainValidationResult(
+                trusted: false,
+                chainPem: $collectedChain,
+                messages: $signerValidation->messages,
+                details: ['signer' => $signerValidation->details]
+            );
+        }
 
+        $trustAnchors = $this->trustedCandidates($trustStore);
+        $paths = ($this->pathBuilder ?? new CertificatePathBuilder())->buildPaths(
+            signerCertificatePem: $signerCertificatePem,
+            candidatesPem: [...$candidateCertificatesPem, ...array_slice($collectedChain, 1)],
+            trustAnchorsPem: $trustAnchors
+        );
+        $messages = [];
+
+        foreach ($paths as $candidateChain) {
             if (! $this->verifyLinks($candidateChain)) {
+                $messages[] = 'Assinatura de um certificado da cadeia nao confere com seu emissor.';
                 continue;
             }
+
+            $caMessages = $this->validateCaCertificates($candidateChain);
+
+            if ($caMessages !== []) {
+                $messages = [...$messages, ...$caMessages];
+                continue;
+            }
+
+            $trustAnchorPem = $candidateChain[count($candidateChain) - 1];
 
             return new CertificateChainValidationResult(
                 trusted: true,
                 chainPem: $candidateChain,
-                trustAnchorPem: $trustAnchorPem
+                trustAnchorPem: $trustAnchorPem,
+                details: $this->chainDetails($candidateChain)
             );
         }
 
         return new CertificateChainValidationResult(
             trusted: false,
-            chainPem: $chain,
-            messages: ['Cadeia X.509 nao ancora em um certificado confiavel do trust store.']
+            chainPem: $collectedChain,
+            messages: $messages !== []
+                ? array_values(array_unique($messages))
+                : ['Cadeia X.509 nao ancora em um certificado confiavel do trust store.'],
+            details: [
+                'candidate_paths' => count($paths),
+                'trust_anchors' => count($trustAnchors),
+            ]
         );
     }
 
@@ -78,33 +115,6 @@ final readonly class OpenSslCertificateChainValidator implements CertificateChai
     private function trustedCandidates(TrustStoreInterface $trustStore): array
     {
         return $trustStore->getTrustedCertificatesPem();
-    }
-
-    /**
-     * @param array<string> $chain
-     * @return ?array<string>
-     */
-    private function chainWithTrustAnchor(array $chain, string $trustAnchorPem): ?array
-    {
-        $normalizer = $this->normalizer ?? new CertificateFormatNormalizer();
-        $trustFingerprint = hash('sha256', $normalizer->normalizeToDer($trustAnchorPem));
-
-        foreach ($chain as $index => $certificatePem) {
-            if (hash('sha256', $normalizer->normalizeToDer($certificatePem)) === $trustFingerprint) {
-                return array_slice($chain, 0, $index + 1);
-            }
-        }
-
-        $last = $chain[count($chain) - 1];
-
-        if ($this->isIssuerOf($trustAnchorPem, $last)) {
-            return [
-                ...$chain,
-                $trustAnchorPem,
-            ];
-        }
-
-        return null;
     }
 
     /**
@@ -133,11 +143,61 @@ final readonly class OpenSslCertificateChainValidator implements CertificateChai
         return openssl_x509_verify($certificate, $issuer);
     }
 
-    private function isIssuerOf(string $issuerPem, string $certificatePem): bool
+    /**
+     * @param array<string> $chain
+     * @return array<string>
+     */
+    private function validateCaCertificates(array $chain): array
     {
-        $extractor = new X509NameDerExtractor();
+        $messages = [];
 
-        return $extractor->extractSubjectNameDer($issuerPem)
-            === $extractor->extractIssuerNameDer($certificatePem);
+        foreach (array_slice($chain, 1) as $index => $certificatePem) {
+            $parsed = openssl_x509_parse($certificatePem);
+            $label = $index === count($chain) - 2 ? 'trust anchor' : 'CA intermediaria';
+
+            if (! is_array($parsed)) {
+                $messages[] = "Nao foi possivel parsear {$label} da cadeia.";
+                continue;
+            }
+
+            $extensions = $parsed['extensions'] ?? [];
+            $basicConstraints = (string) ($extensions['basicConstraints'] ?? '');
+            $keyUsage = (string) ($extensions['keyUsage'] ?? '');
+
+            if (! str_contains(strtoupper($basicConstraints), 'CA:TRUE')) {
+                $messages[] = "{$label} da cadeia nao possui Basic Constraints CA:TRUE.";
+            }
+
+            if ($keyUsage !== '' && ! str_contains(strtolower($keyUsage), 'certificate sign')) {
+                $messages[] = "{$label} da cadeia nao permite keyCertSign.";
+            }
+        }
+
+        return $messages;
+    }
+
+    /**
+     * @param array<string> $chain
+     * @return array<string, mixed>
+     */
+    private function chainDetails(array $chain): array
+    {
+        $normalizer = $this->normalizer ?? new CertificateFormatNormalizer();
+
+        return [
+            'chain_length' => count($chain),
+            'fingerprints' => array_map(
+                fn (string $certificatePem): string => strtoupper(hash('sha256', $normalizer->normalizeToDer($certificatePem))),
+                $chain
+            ),
+            'subjects' => array_map(
+                static function (string $certificatePem): array {
+                    $parsed = openssl_x509_parse($certificatePem);
+
+                    return is_array($parsed) ? ($parsed['subject'] ?? []) : [];
+                },
+                $chain
+            ),
+        ];
     }
 }

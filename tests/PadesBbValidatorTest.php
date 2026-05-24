@@ -25,6 +25,14 @@ final class PadesBbValidatorTest extends TestCase
         $this->assertTrue($result->checks['cms_signed_data']);
         $this->assertTrue($result->checks['content_type_attribute']);
         $this->assertTrue($result->checks['message_digest_attribute']);
+        $this->assertTrue($result->checks['message_digest_matches_pdf_bytes']);
+        $this->assertTrue($result->checks['cryptographic_signature']);
+        $this->assertTrue($result->checks['signer_certificate_present']);
+        $this->assertTrue($result->checks['signer_certificate_matches_signer_info']);
+        $this->assertTrue($result->checks['cms_cades_internal_validation']);
+        $this->assertTrue($result->checks['ess_cert_id_v2_matches_signer_certificate']);
+        $this->assertTrue($result->checks['issuer_serial_matches_signer_certificate']);
+        $this->assertTrue($result->checks['cms_algorithm_policy']);
         $this->assertTrue($result->checks['signing_certificate_v2_attribute']);
     }
 

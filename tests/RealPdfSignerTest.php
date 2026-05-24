@@ -193,6 +193,197 @@ final class RealPdfSignerTest extends TestCase
         $this->assertStringContainsString('/BBox [0 0 499 580]', $content);
     }
 
+    public function test_it_appends_signature_page_to_five_page_pdf_as_sixth_page(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-five-pages-input-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-five-pages-output-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        file_put_contents($input, $this->buildPdf([
+            1 => "<< /Type /Catalog /Pages 2 0 R >>",
+            2 => "<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R 6 0 R 7 0 R] /Count 5 >>",
+            3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            4 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            5 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            6 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            7 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+        ]));
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            visibleSignature: true,
+            appendSignaturePage: true
+        );
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertMatchesRegularExpression('/2\s+0\s+obj\s*<<.*\/Kids\s*\[3\s+0\s+R\s+4\s+0\s+R\s+5\s+0\s+R\s+6\s+0\s+R\s+7\s+0\s+R\s+\d+\s+0\s+R\].*\/Count\s+6.*>>\s*endobj/s', $content);
+        $this->assertMatchesRegularExpression('/\/Type\s+\/Page\s+\/Parent\s+2\s+0\s+R\s+\/MediaBox\s+\[\s+0\s+0\s+595\s+842\s+\]\s+\/Annots\s+\[\d+\s+0\s+R\]/s', $content);
+    }
+
+    public function test_it_appends_signature_page_to_nested_page_tree(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-nested-pages-input-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-nested-pages-output-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        file_put_contents($input, $this->buildPdf([
+            1 => "<< /Type /Catalog /Pages 2 0 R >>",
+            2 => "<< /Type /Pages /Kids [10 0 R] /Count 5 >>",
+            3 => "<< /Type /Page /Parent 10 0 R /MediaBox [0 0 612 792] >>",
+            4 => "<< /Type /Page /Parent 10 0 R /MediaBox [0 0 612 792] >>",
+            5 => "<< /Type /Page /Parent 10 0 R /MediaBox [0 0 612 792] >>",
+            6 => "<< /Type /Page /Parent 10 0 R /MediaBox [0 0 612 792] >>",
+            7 => "<< /Type /Page /Parent 10 0 R /MediaBox [0 0 612 792] >>",
+            10 => "<< /Type /Pages /Parent 2 0 R /Kids [3 0 R 4 0 R 5 0 R 6 0 R 7 0 R] /Count 5 /Resources 20 0 R >>",
+            20 => "<< /ProcSet [/PDF] >>",
+        ]));
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            visibleSignature: true,
+            appendSignaturePage: true
+        );
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertMatchesRegularExpression('/2\s+0\s+obj\s*<<.*\/Kids\s*\[10\s+0\s+R\].*\/Count\s+6.*>>\s*endobj/s', $content);
+        $this->assertMatchesRegularExpression('/10\s+0\s+obj\s*<<.*\/Kids\s*\[3\s+0\s+R\s+4\s+0\s+R\s+5\s+0\s+R\s+6\s+0\s+R\s+7\s+0\s+R\s+\d+\s+0\s+R\].*\/Count\s+6.*>>\s*endobj/s', $content);
+        $this->assertMatchesRegularExpression('/\/Type\s+\/Page\s+\/Parent\s+10\s+0\s+R\s+\/MediaBox\s+\[\s+0\s+0\s+595\s+842\s+\]\s+\/Annots\s+\[\d+\s+0\s+R\]\s+>>/s', $content);
+        $this->assertDoesNotMatchRegularExpression('/\/Type\s+\/Page\s+\/Parent\s+10\s+0\s+R(?:(?!endobj).)*\/Resources\s*<</s', $content);
+    }
+
+    public function test_it_appends_signature_page_when_kids_array_is_indirect(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-indirect-kids-input-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-indirect-kids-output-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        file_put_contents($input, $this->buildPdf([
+            1 => "<< /Type /Catalog /Pages 2 0 R >>",
+            2 => "<< /Type /Pages /Kids 8 0 R /Count 1 >>",
+            3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            8 => "[3 0 R]",
+        ]));
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            visibleSignature: true,
+            appendSignaturePage: true
+        );
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertMatchesRegularExpression('/2\s+0\s+obj\s*<<.*\/Kids\s+8\s+0\s+R.*\/Count\s+2.*>>\s*endobj/s', $content);
+        $this->assertMatchesRegularExpression('/8\s+0\s+obj\s*\[3\s+0\s+R\s+\d+\s+0\s+R\]\s*endobj/s', $content);
+    }
+
+    public function test_it_uses_configured_signature_page_size_and_large_rect(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-custom-page-input-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-custom-page-output-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        file_put_contents($input, $this->buildPdf([
+            1 => "<< /Type /Catalog /Pages 2 0 R >>",
+            2 => "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+        ]));
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            visibleSignature: true,
+            appendSignaturePage: true,
+            signaturePageMediaBox: [0, 0, 612, 792],
+            signaturePageRect: [72, 100, 540, 300]
+        );
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertStringContainsString('/MediaBox [ 0 0 612 792 ]', $content);
+        $this->assertStringContainsString('/Rect [ 72 100 540 300 ]', $content);
+        $this->assertStringContainsString('/BBox [0 0 468 200]', $content);
+    }
+
+    public function test_it_appends_signature_page_to_already_signed_pdf(): void
+    {
+        $first = tempnam(sys_get_temp_dir(), 'pades-first-signature-');
+        $second = tempnam(sys_get_temp_dir(), 'pades-second-signature-');
+
+        $this->assertIsString($first);
+        $this->assertIsString($second);
+
+        $input = tempnam(sys_get_temp_dir(), 'pades-already-signed-input-');
+        $this->assertIsString($input);
+
+        file_put_contents($input, $this->buildPdf([
+            1 => "<< /Type /Catalog /Pages 2 0 R >>",
+            2 => "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+        ]));
+
+        (new RealPdfSigner())->sign($input, $first);
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $first,
+            outputPdf: $second,
+            visibleSignature: true,
+            appendSignaturePage: true
+        );
+
+        $content = file_get_contents($second);
+
+        $this->assertNotFalse($content);
+        $this->assertSame(2, preg_match_all('/\/Type\s+\/Sig\b/', $content));
+        $this->assertStringContainsString('/Prev ', $content);
+        $this->assertStringContainsString('/Rect [ 48 120 547 700 ]', $content);
+    }
+
+    public function test_it_appends_signature_page_with_existing_acroform(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-existing-acroform-input-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-existing-acroform-output-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        file_put_contents($input, $this->buildPdf([
+            1 => "<< /Type /Catalog /Pages 2 0 R /AcroForm 5 0 R >>",
+            2 => "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+            5 => "<< /Fields [] /SigFlags 3 >>",
+        ]));
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            visibleSignature: true,
+            appendSignaturePage: true
+        );
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertMatchesRegularExpression('/5\s+0\s+obj\s*<<.*\/Fields\s*\[\d+\s+0\s+R\].*\/SigFlags\s+3.*>>\s*endobj/s', $content);
+        $this->assertMatchesRegularExpression('/\/Type\s+\/Page\s+\/Parent\s+2\s+0\s+R\s+\/MediaBox\s+\[\s+0\s+0\s+595\s+842\s+\]\s+\/Annots\s+\[\d+\s+0\s+R\]/s', $content);
+    }
+
     public function test_it_signs_existing_empty_named_signature_field(): void
     {
         $input = tempnam(sys_get_temp_dir(), 'pades-empty-field-');
@@ -371,6 +562,93 @@ final class RealPdfSignerTest extends TestCase
         );
     }
 
+    public function test_visible_signature_appearance_uses_rendered_text_without_pdf_fonts(): void
+    {
+        $input = __DIR__ . '/Output/visible-appearance-input.pdf';
+        $output = __DIR__ . '/Output/visible-appearance-output.pdf';
+
+        file_put_contents($input, $this->buildPdf([
+            1 => '<< /Type /Catalog /Pages 2 0 R >>',
+            2 => '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+            3 => '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>',
+        ]));
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            visibleSignature: true,
+            signatureName: 'Admin User',
+            signatureReason: 'Assinatura digital de documento assistencial',
+            signatureLocation: 'Prontuario Eletronico MPTO',
+            signatureContactInfo: 'admin@example.com',
+            appendSignaturePage: true
+        );
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertStringContainsString('/Subtype /Form', $content);
+        $this->assertStringNotContainsString('/BaseFont', $content);
+        $this->assertStringNotContainsString('/FontFile', $content);
+        $this->assertGreaterThan(100, substr_count($content, ' re f'));
+    }
+
+    public function test_signature_page_supports_common_page_sizes_landscape_and_rotated_sources(): void
+    {
+        $cases = [
+            'a4' => [
+                'sourcePage' => '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] >>',
+                'signaturePageMediaBox' => [0, 0, 595, 842],
+                'expectedMediaBox' => '/MediaBox [ 0 0 595 842 ]',
+            ],
+            'letter' => [
+                'sourcePage' => '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>',
+                'signaturePageMediaBox' => [0, 0, 612, 792],
+                'expectedMediaBox' => '/MediaBox [ 0 0 612 792 ]',
+            ],
+            'landscape' => [
+                'sourcePage' => '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] >>',
+                'signaturePageMediaBox' => [0, 0, 842, 595],
+                'expectedMediaBox' => '/MediaBox [ 0 0 842 595 ]',
+            ],
+            'rotated' => [
+                'sourcePage' => '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Rotate 90 >>',
+                'signaturePageMediaBox' => [0, 0, 612, 792],
+                'expectedMediaBox' => '/MediaBox [ 0 0 612 792 ]',
+                'expectedSourceMarker' => '/Rotate 90',
+            ],
+        ];
+
+        foreach ($cases as $name => $case) {
+            $input = __DIR__ . "/Output/signature-page-{$name}-input.pdf";
+            $output = __DIR__ . "/Output/signature-page-{$name}-output.pdf";
+
+            file_put_contents($input, $this->buildPdf([
+                1 => '<< /Type /Catalog /Pages 2 0 R >>',
+                2 => '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+                3 => $case['sourcePage'],
+            ]));
+
+            (new RealPdfSigner())->sign(
+                inputPdf: $input,
+                outputPdf: $output,
+                visibleSignature: true,
+                appendSignaturePage: true,
+                signaturePageMediaBox: $case['signaturePageMediaBox']
+            );
+
+            $content = file_get_contents($output);
+
+            $this->assertNotFalse($content);
+            $this->assertStringContainsString($case['expectedMediaBox'], $content);
+            $this->assertStringContainsString('/Count 2', $content);
+
+            if (isset($case['expectedSourceMarker'])) {
+                $this->assertStringContainsString($case['expectedSourceMarker'], $content);
+            }
+        }
+    }
+
     private function buildPdfWithEmptySignatureField(): string
     {
         return $this->buildPdf([
@@ -401,7 +679,9 @@ final class RealPdfSignerTest extends TestCase
         $pdf .= "0000000000 65535 f \n";
 
         for ($number = 1; $number < $size; $number++) {
-            $pdf .= sprintf("%010d 00000 n \n", $offsets[$number] ?? 0);
+            $pdf .= isset($offsets[$number])
+                ? sprintf("%010d 00000 n \n", $offsets[$number])
+                : "0000000000 65535 f \n";
         }
 
         $pdf .= "trailer\n<< /Size {$size} /Root 1 0 R >>\nstartxref\n{$xref}\n%%EOF\n";

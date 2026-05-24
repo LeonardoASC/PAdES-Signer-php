@@ -12,6 +12,11 @@ final readonly class CertStatusExtractor
     public function extract(
         string $basicOcspResponse
     ): ?string {
+        try {
+            return (new OcspResponseParser())->parseBasic(0, $basicOcspResponse)->responses[0]->certificateStatus ?? null;
+        } catch (RuntimeException) {
+        }
+
         $status = $this->extractFromSingleResponse($basicOcspResponse);
 
         if ($status !== null) {

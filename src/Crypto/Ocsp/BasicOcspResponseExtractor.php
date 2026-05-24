@@ -12,6 +12,11 @@ final readonly class BasicOcspResponseExtractor
     public function extract(
         string $responseDer
     ): ?string {
+        try {
+            return (new OcspResponseParser())->parse($responseDer)->basicResponseDer;
+        } catch (RuntimeException) {
+        }
+
         $oid = hex2bin(
             '2B0601050507300101'
         );

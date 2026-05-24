@@ -8,6 +8,8 @@ use RuntimeException;
 
 final readonly class PdfDocumentStructure
 {
+    private const int MAX_REFERENCE_DEPTH = 32;
+
     /**
      * @param array<int, PdfIndirectObject> $objects
      * @param array<int, array<int, array{offset:int,generation:int,in_use:bool,type?:int,object_stream?:int,index?:int}>> $xrefTables
@@ -47,5 +49,44 @@ final readonly class PdfDocumentStructure
         }
 
         return $this->objects[$number];
+    }
+
+    public function getObjectByReference(string $reference): PdfIndirectObject
+    {
+        if (! preg_match('/^\s*(\d+)\s+(\d+)\s+R\s*$/', $reference, $matches)) {
+            throw new RuntimeException("Referencia indireta PDF invalida: {$reference}");
+        }
+
+        return $this->getObject((int) $matches[1]);
+    }
+
+    public function resolveObject(int $number, int $maxDepth = self::MAX_REFERENCE_DEPTH): PdfIndirectObject
+    {
+        $seen = [];
+        $object = $this->getObject($number);
+
+        for ($depth = 0; $depth <= $maxDepth; $depth++) {
+            if (isset($seen[$object->number])) {
+                throw new RuntimeException('Referencia indireta PDF circular.');
+            }
+
+            $seen[$object->number] = true;
+
+            if (! preg_match('/^\s*(\d+)\s+\d+\s+R\s*$/', $object->body, $matches)) {
+                return $object;
+            }
+
+            $object = $this->getObject((int) $matches[1]);
+        }
+
+        throw new RuntimeException('Limite de recursao de referencia indireta PDF excedido.');
+    }
+
+    public function resolveReference(string $reference, int $maxDepth = self::MAX_REFERENCE_DEPTH): PdfIndirectObject
+    {
+        return $this->resolveObject(
+            number: $this->getObjectByReference($reference)->number,
+            maxDepth: $maxDepth
+        );
     }
 }

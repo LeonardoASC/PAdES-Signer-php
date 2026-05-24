@@ -4,14 +4,23 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades\Crypto\X509;
 
-final readonly class AiaCaIssuersDownloader
+final class AiaCaIssuersDownloader
 {
+    /**
+     * @var array<string, string|null>
+     */
+    private static array $cache = [];
+
     public function __construct(
         private int $timeoutSeconds = 20
     ) {}
 
     public function download(string $url): ?string
     {
+        if (array_key_exists($url, self::$cache)) {
+            return self::$cache[$url];
+        }
+
         $context = stream_context_create([
             'http' => [
                 'method' => 'GET',
@@ -27,8 +36,12 @@ final readonly class AiaCaIssuersDownloader
         $content = @file_get_contents($url, false, $context);
 
         if ($content === false || $content === '') {
+            self::$cache[$url] = null;
+
             return null;
         }
+
+        self::$cache[$url] = $content;
 
         return $content;
     }

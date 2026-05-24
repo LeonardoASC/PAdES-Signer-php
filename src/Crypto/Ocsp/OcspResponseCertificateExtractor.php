@@ -14,6 +14,11 @@ final readonly class OcspResponseCertificateExtractor
      */
     public function extract(string $responseDer): array
     {
+        try {
+            return (new OcspResponseParser())->parse($responseDer)->certificatesDer;
+        } catch (RuntimeException) {
+        }
+
         $basicResponse = (new BasicOcspResponseExtractor())
             ->extract($responseDer);
 

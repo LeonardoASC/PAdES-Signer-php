@@ -60,7 +60,7 @@ Pades::sign(
     inputPdf: 'document.pdf',
     outputPdf: 'document-signed.pdf',
     certificatePath: 'certificate.pfx',
-    certificatePassword: '123456'
+    certificatePassword: getenv('PFX_PASSWORD')
 );
 ```
 
@@ -74,7 +74,10 @@ use NihilLabs\Pades\Signing\PfxSignatureCredential;
 (new PadesSigner())->sign(
     inputPdf: 'document.pdf',
     outputPdf: 'document-signed.pdf',
-    credential: new PfxSignatureCredential('certificate.pfx', '123456'),
+    credential: new PfxSignatureCredential(
+        'certificate.pfx',
+        getenv('PFX_PASSWORD')
+    ),
     options: new PadesSignatureOptions(
         visibleSignature: true,
         signatureRect: [48, 48, 547, 96],
@@ -129,6 +132,13 @@ Adobe Acrobat recognizes generated signatures as digital signatures.
 This project is still under active development and should currently be considered experimental for production environments.
 
 The generated CMS signatures are compatible with OpenSSL verification workflows and are evolving toward broader PAdES interoperability.
+
+For the current internal scope, supported PDF assumptions, unsupported cases and
+interoperability matrix, see [docs/ESCOPO-INTERNO.md](docs/ESCOPO-INTERNO.md).
+For repository hygiene rules around fixtures, generated files and local signing
+material, see [docs/HIGIENE-REPOSITORIO.md](docs/HIGIENE-REPOSITORIO.md).
+For minimum usage examples with PFX/P12, PEM, visible signatures and Git Bash
+commands, see [docs/USO-MINIMO.md](docs/USO-MINIMO.md).
 
 ---
 

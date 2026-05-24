@@ -4,27 +4,30 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades\Validation;
 
-use NihilLabs\Pades\Internal\Crypto\CmsBaselineProfile;
+use NihilLabs\Pades\Internal\Crypto\CmsSignedDataParser;
+use RuntimeException;
 
 final readonly class PadesBaselineInspector
 {
     public function inspect(string $binaryCms): array
     {
-        $profile = new CmsBaselineProfile();
-
-        $hasSignedData = $profile
-            ->hasSignedDataOid($binaryCms);
-
-        $hasSigningCertificateV2 = $profile
-            ->hasSigningCertificateV2Oid($binaryCms);
-        $hasContentType = $profile
-            ->hasContentTypeAttributeOid($binaryCms);
-        $hasMessageDigest = $profile
-            ->hasMessageDigestAttributeOid($binaryCms);
-        $hasSigningTime = $profile
-            ->hasSigningTimeAttributeOid($binaryCms);
-        $hasSignatureTimestampToken = $profile
-            ->hasSignatureTimestampTokenAttributeOid($binaryCms);
+        try {
+            $cms = (new CmsSignedDataParser())->parse($binaryCms);
+            $hasSignedData = $cms->contentTypeOid === '1.2.840.113549.1.7.2';
+            $hasContentType = $cms->signedAttribute('1.2.840.113549.1.9.3') !== null;
+            $hasMessageDigest = $cms->signedAttribute('1.2.840.113549.1.9.4') !== null;
+            $hasSigningTime = $cms->signedAttribute('1.2.840.113549.1.9.5') !== null;
+            $hasSigningCertificateV2 = $cms->signedAttribute('1.2.840.113549.1.9.16.2.47') !== null;
+            $hasSignatureTimestampToken = $cms->hasUnsignedAttributes
+                && str_contains($binaryCms, hex2bin('060b2a864886f70d010910020e'));
+        } catch (RuntimeException) {
+            $hasSignedData = false;
+            $hasContentType = false;
+            $hasMessageDigest = false;
+            $hasSigningTime = false;
+            $hasSigningCertificateV2 = false;
+            $hasSignatureTimestampToken = false;
+        }
 
         return [
             'is_cms_signed_data' => $hasSignedData,

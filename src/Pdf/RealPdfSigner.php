@@ -41,7 +41,8 @@ final readonly class RealPdfSigner
         ?SignatureAlgorithmPolicy $algorithmPolicy = null,
         bool $includeSigningTime = false,
         bool $appendSignaturePage = false,
-        array $signaturePageMediaBox = [0, 0, 595, 842]
+        array $signaturePageMediaBox = [0, 0, 595, 842],
+        array $signaturePageRect = [48, 120, 547, 700]
     ): void {
         if (! file_exists($inputPdf)) {
             throw new InvalidArgumentException("PDF de entrada não encontrado: {$inputPdf}");
@@ -124,7 +125,7 @@ final readonly class RealPdfSigner
         $signatureObjectNumber = $nextAvailableObjectNumber++;
 
         if ($signaturePageObjectNumber !== null && $signatureRect === [48, 48, 547, 96]) {
-            $signatureRect = [48, 120, 547, 700];
+            $signatureRect = $signaturePageRect;
         }
 
         $pageNumber = null;
@@ -209,7 +210,10 @@ final readonly class RealPdfSigner
         }
 
         if ($appendedSignaturePage !== null) {
-            $objects[$appendedSignaturePage['pagesObjectNumber']] = $appendedSignaturePage['pagesBody'];
+            foreach ($appendedSignaturePage['pageTreeObjects'] as $objectNumber => $objectBody) {
+                $objects[$objectNumber] = $objectBody;
+            }
+
             $objects[$signaturePageObjectNumber] = $appendedSignaturePage['pageBody'];
         }
 
@@ -219,7 +223,12 @@ final readonly class RealPdfSigner
 
             $objects[$appearanceObjectNumber] = (new PdfSignatureAppearance())
                 ->build(
-                    text: "Digitally signed by {$signatureName}",
+                    text: $this->appearanceText(
+                        name: $signatureName,
+                        reason: $signatureReason,
+                        location: $signatureLocation,
+                        contactInfo: $signatureContactInfo
+                    ),
                     width: $appearanceWidth,
                     height: $appearanceHeight
                 );
@@ -311,6 +320,27 @@ final readonly class RealPdfSigner
             ['\\\\', '\\(', '\\)'],
             $value
         ) . ')';
+    }
+
+    private function appearanceText(
+        string $name,
+        string $reason,
+        ?string $location,
+        ?string $contactInfo
+    ): string {
+        $date = new \DateTimeImmutable(
+            'now',
+            new \DateTimeZone('America/Sao_Paulo')
+        );
+
+        return implode("\n", array_filter([
+            'ASSINATURA DIGITAL',
+            "Assinado por: {$name}",
+            'Data: ' . $date->format('d/m/Y H:i:s O'),
+            "Motivo: {$reason}",
+            $location !== null ? "Local: {$location}" : null,
+            $contactInfo !== null ? "Contato: {$contactInfo}" : null,
+        ]));
     }
 
     private function pdfDate(): string

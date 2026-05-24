@@ -14,20 +14,17 @@ final readonly class PdfTrailer
 
     public function getReference(string $name): ?string
     {
-        if (! preg_match('/\/' . preg_quote($name, '/') . '\s+(\d+\s+\d+\s+R)\b/', $this->dictionary, $matches)) {
-            return null;
-        }
-
-        return $matches[1];
+        return (new PdfDictionaryReader())->getReference($this->dictionary, $name);
     }
 
     public function getInteger(string $name): ?int
     {
-        if (! preg_match('/\/' . preg_quote($name, '/') . '\s+(\d+)\b/', $this->dictionary, $matches)) {
-            return null;
-        }
+        return (new PdfDictionaryReader())->getInteger($this->dictionary, $name);
+    }
 
-        return (int) $matches[1];
+    public function hasEntry(string $name): bool
+    {
+        return (new PdfDictionaryReader())->getValue($this->dictionary, $name) !== null;
     }
 
     public function firstDocumentIdHex(): ?string

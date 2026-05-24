@@ -8,6 +8,12 @@
 /coverage/
 
 /tests/Output/
+/tests/Output/**
+
+# Real local signing material. Keep these out of the repository.
+/tests/Fixtures/icp-valid.pfx
+/tests/Fixtures/input-real.pdf
+/tests/Fixtures/pyhanko-valid.pdf
 
 /*.log
 /.phpunit.result.cache
@@ -21,6 +27,9 @@ Thumbs.db
 *.crt
 *.cer
 *.pdf
+
+# Public fixture exceptions that are intentionally safe to version.
+!/tests/Fixtures/sample.pdf
 
 .env
 .env.*

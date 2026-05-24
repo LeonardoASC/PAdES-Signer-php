@@ -229,145 +229,181 @@ Primeiro perfil ETSI formal.
 - [x] Suporte a archival timestamp
 - [x] Perfil PAdES-B-LTA completo
 - [x] Validador PAdES-B-LTA
-16. Interoperabilidade
+16. Roadmap pendente em ordem de desenvolvimento
 
-Somente depois do core estar estável.
+Esta parte reorganiza somente o que ainda falta fazer. A ideia e seguir uma ordem
+pratica: primeiro organizar o escopo interno, depois endurecer o core, depois
+aproximar de pyHanko em validacao, LTV, LTA e interoperabilidade. A publicacao
+fica para depois que o projeto estiver mais maduro.
 
-## 16.1 Interoperabilidade
+## 16.1 Fechar escopo interno
 
-- [ ] Testes com Adobe Acrobat
-- [ ] Testes com Adobe Reader
-- [ ] Testes com pyHanko
-- [ ] Testes com DSS Europeu
-- [ ] Testes com validadores ETSI
-- [ ] Testes de interoperabilidade internacional
-- [ ] Fixtures internacionais
-- [ ] PDFs de conformidade ETSI
-- [ ] Compatibilidade Windows Preview
-- [ ] Compatibilidade macOS Preview
-17. Segurança e Performance
-## 17.1 Segurança
+- [x] Declarar internamente que o suporte atual principal e PAdES-B-B
+- [x] Declarar internamente que PAdES-LT/LTA ainda nao deve ser considerado pronto
+- [x] Documentar quais tipos de PDF sao suportados no fluxo principal
+- [x] Documentar quais tipos de PDF devem ser rejeitados ou tratados como nao suportados
+- [x] Separar claramente recursos prontos, experimentais e pendentes
+- [x] Criar matriz simples de suporte: ITI, Adobe, DSS, pyHanko
 
-- [ ] Streaming de PDFs grandes
-- [ ] Assinatura sem carregar PDF inteiro em memória
-- [ ] Proteção contra malformed PDFs
-- [ ] Proteção contra object injection
-- [ ] Proteção contra xref corruption
-- [ ] Hardenização ASN.1 parser
-- [ ] Limites de memória configuráveis
-- [ ] Limites de tamanho configuráveis
-- [ ] Timeout configurável para TSA/OCSP
-18. Documentação e Compliance
+## 16.2 Higiene do repositorio
 
-ÚLTIMA camada.
+- [x] Remover certificados reais, senhas, arquivos ICP sensiveis e PDFs privados
+- [x] Garantir que fixtures publicas nao contenham dados pessoais reais
+- [x] Revisar `tests/Output` e impedir commit de PDFs gerados
+- [x] Revisar `.gitignore` para certificados, chaves, logs e outputs locais
+- [x] Revisar mensagens de erro para nao vazar senha, caminho sensivel ou conteudo de certificado
+- [x] Revisar `composer.json` para nome, descricao e autoload
 
-## 18.1 Documentação
+## 16.3 Documentar fluxo minimo de uso
 
-- [ ] Documentação de API PAdES
-- [ ] Documentação arquitetural
-- [ ] Guia de interoperabilidade
-- [ ] Guia de múltiplas assinaturas
-- [ ] Guia de timestamp
-- [ ] Guia de LTV/LTA
-- [ ] Guia de signer providers
-- [ ] Mapeamento ETSI EN 319 142
-- [ ] Verificação formal de conformidade ETSI
-- [ ] Matriz de conformidade ETSI EN 319 142
-- [ ] Matriz de conformidade ISO 32000
-- [ ] Relatório ETSI detalhado
-- [ ] Relatório de integridade PDF
-- [ ] Relatório de cadeia criptográfica
+- [x] Criar exemplo minimo de assinatura com PFX/P12
+- [x] Criar exemplo minimo de assinatura com PEM
+- [x] Criar exemplo de assinatura visivel com pagina final dedicada
+- [x] Criar exemplo de assinatura invisivel
+- [x] Criar exemplo usando `Pades::sign`
+- [x] Criar exemplo usando `PadesSigner` com `PadesSignatureOptions`
+- [x] Documentar comando para rodar testes no Git Bash
+- [x] Documentar como configurar senha de certificado por variavel de ambiente
 
-19. Pendencias identificadas comparando com pyHanko
+17. Endurecer o PDF core
 
-Esta lista separa itens que podem ja ter uma estrutura inicial no projeto,
-mas ainda precisam de implementacao semantica robusta para chegar perto do
-comportamento do pyHanko.
+Antes de avancar em validacao e LTV, o parser e o incremental update precisam
+ficar mais confiaveis para PDFs reais variados.
 
-## 19.1 Validacao real de assinatura PDF
+## 17.1 Parser PDF robusto
 
-- [ ] Criar modelo equivalente a `EmbeddedPdfSignature`
-- [ ] Extrair campo de assinatura e dicionario `/Sig` por parser PDF, nao por busca textual
-- [ ] Extrair `/Contents` preservando bytes originais
-- [ ] Extrair e validar `/ByteRange` semanticamente
-- [ ] Calcular digest real dos bytes cobertos pelo `/ByteRange`
-- [ ] Comparar digest calculado com `messageDigest` do CMS
-- [ ] Verificar assinatura criptografica do `SignerInfo`
-- [ ] Identificar certificado do assinante dentro do CMS
-- [ ] Validar que o certificado do assinante corresponde ao `SignerInfo`
-- [ ] Detectar se a assinatura cobre o documento inteiro ou apenas uma revisao
-- [ ] Detectar bytes nao cobertos, gaps e cauda nao assinada
-- [ ] Validar assinaturas em PDFs com multiplas revisoes
-- [ ] Gerar status detalhado de validacao da assinatura PDF
+- [x] Substituir regex criticas por tokenizer/parser PDF estrutural
+- [x] Resolver objetos indiretos de forma recursiva e segura
+- [x] Suportar geracoes de objetos diferentes de zero
+- [x] Suportar nomes, strings, arrays e dicionarios PDF aninhados corretamente
+- [x] Suportar streams com filtros comuns alem de FlateDecode quando necessario
+- [x] Validar xref table contra offsets reais
+- [x] Validar xref stream contra offsets reais
+- [x] Suportar object streams com parsing completo
+- [x] Suportar PDFs hibridos com xref table e xref stream
+- [x] Suportar PDFs criptografados ou rejeita-los explicitamente
+- [x] Criar limites contra PDF malformado, recursao infinita e objetos gigantes
 
-## 19.2 Analise de revisoes e modificacoes
+## 17.2 Pagina final de assinatura
 
-- [ ] Implementar politica de diff entre revisoes assinadas
-- [ ] Classificar modificacoes permitidas e proibidas apos assinatura
-- [ ] Validar alteracoes permitidas por DocMDP
-- [ ] Validar alteracoes permitidas por FieldMDP
-- [ ] Permitir updates legitimos de DSS e timestamps documentais
-- [ ] Rejeitar alteracoes suspeitas em objetos assinados
-- [ ] Detectar substituicao de objetos por incremental update malicioso
-- [ ] Validar cobertura da xref da revisao assinada
-- [ ] Gerar relatorio de integridade incremental do PDF
+- [x] Tornar configuravel o tamanho padrao da pagina final de assinatura
+- [x] Tornar configuravel o retangulo padrao da assinatura grande
+- [x] Suportar arvore `/Pages` com varios niveis ao adicionar pagina final
+- [x] Suportar `/Kids` indireto ou estruturas de pagina mais complexas
+- [x] Preservar recursos herdados relevantes da arvore de paginas quando necessario
+- [x] Validar `/Count` de paginas antes e depois do incremental update
+- [x] Criar teste com PDF de 5 paginas confirmando saida com 6 paginas
+- [x] Criar teste com PDF ja assinado confirmando nova revisao sem quebrar assinatura anterior
+- [x] Criar teste com AcroForm existente e pagina final dedicada
 
-## 19.3 Parser PDF robusto
+## 17.3 Aparencia visivel
 
-- [ ] Substituir regex criticas por tokenizer/parser PDF estrutural
-- [ ] Resolver objetos indiretos de forma recursiva e segura
-- [ ] Suportar geracoes de objetos diferentes de zero
-- [ ] Suportar nomes, strings, arrays e dicionarios PDF aninhados corretamente
-- [ ] Suportar streams com filtros comuns alem de FlateDecode quando necessario
-- [ ] Validar xref table contra offsets reais
-- [ ] Validar xref stream contra offsets reais
-- [ ] Suportar object streams com parsing completo
-- [ ] Suportar PDFs hibridos com xref table e xref stream
-- [ ] Suportar PDFs criptografados ou rejeita-los explicitamente
-- [ ] Criar limites contra PDF malformado, recursao infinita e objetos gigantes
+- [x] Suportar texto visivel usando fonte embutida ou imagem renderizada
+- [x] Detectar se o PDF original ja contem fontes nao incorporadas
+- [x] Separar aviso de fonte causado pelo PDF original do aviso causado pela assinatura
+- [x] Criar aparencia final com dados do signatario, data, motivo e local
+- [ ] Testar aparencia em Adobe Acrobat, Adobe Reader, Chrome e Firefox
+- [x] Testar pagina final em PDFs A4, carta, paisagem e PDFs com rotacao
 
-## 19.4 CMS/CAdES/PAdES
+18. Validacao real de assinatura PDF
 
-- [ ] Validar CMS internamente sem depender apenas do comando `openssl cms`
-- [ ] Implementar parser CMS completo o suficiente para validacao PAdES
-- [ ] Validar `contentType`, `messageDigest` e `SigningCertificateV2`
-- [ ] Validar `ESSCertIDv2` contra o certificado do assinante
-- [ ] Validar `issuerSerial` contra o certificado do assinante
-- [ ] Validar algoritmo de digest e assinatura conforme politica configurada
-- [ ] Validar RSA-PSS, ECDSA e parametros ASN.1 corretamente
-- [ ] Suportar atributos assinados opcionais sem quebrar conformidade PAdES
-- [ ] Tratar `signingTime` como opcional/configuravel conforme perfil
-- [ ] Criar testes comparativos com CMS gerado pelo pyHanko
+Depois que a escrita do PDF estiver mais solida, o proximo passo e conseguir
+validar internamente o que foi assinado, em vez de depender so de ITI, Adobe ou OpenSSL.
 
-## 19.5 Certificados e cadeia de confianca
+## 18.1 Extracao e validacao de assinatura
 
-- [ ] Corrigir suporte a multiplas trust anchors
-- [ ] Construir cadeia X.509 por issuer/subject e Authority Key Identifier
-- [ ] Validar Basic Constraints de CAs
-- [ ] Validar Key Usage de CAs e certificado final
-- [ ] Validar Extended Key Usage quando aplicavel
-- [ ] Validar expiracao usando signing time ou timestamp confiavel
-- [ ] Validar politicas de certificado quando configuradas
-- [ ] Implementar path building com cadeias alternativas
-- [ ] Suportar AIA fetching com cache e timeout
-- [ ] Gerar resultado detalhado da cadeia de confianca
+- [x] Criar modelo equivalente a `EmbeddedPdfSignature`
+- [x] Extrair campo de assinatura e dicionario `/Sig` por parser PDF, nao por busca textual
+- [x] Extrair `/Contents` preservando bytes originais
+- [x] Extrair e validar `/ByteRange` semanticamente
+- [x] Calcular digest real dos bytes cobertos pelo `/ByteRange`
+- [x] Comparar digest calculado com `messageDigest` do CMS
+- [x] Verificar assinatura criptografica do `SignerInfo`
+- [x] Identificar certificado do assinante dentro do CMS
+- [x] Validar que o certificado do assinante corresponde ao `SignerInfo`
+- [x] Detectar se a assinatura cobre o documento inteiro ou apenas uma revisao
+- [x] Detectar bytes nao cobertos, gaps e cauda nao assinada
+- [x] Validar assinaturas em PDFs com multiplas revisoes
+- [x] Gerar status detalhado de validacao da assinatura PDF
 
-## 19.6 OCSP e CRL
+## 18.2 Analise de revisoes e modificacoes
 
-- [ ] Implementar parser OCSP real
-- [ ] Validar assinatura da resposta OCSP
-- [ ] Validar que o responder OCSP e autorizado
-- [ ] Validar `CertID` da resposta contra o certificado consultado
-- [ ] Validar status good/revoked/unknown por certificado
-- [ ] Validar `thisUpdate`, `nextUpdate` e `producedAt`
-- [ ] Validar nonce OCSP quando enviado
-- [ ] Extrair certificados embutidos em BasicOCSPResponse
-- [ ] Implementar parser CRL real
-- [ ] Validar assinatura da CRL
-- [ ] Validar CRL issuer, AKI, nextUpdate e certificados revogados
-- [ ] Integrar OCSP/CRL com validacao de cadeia
+- [x] Implementar politica de diff entre revisoes assinadas
+- [x] Classificar modificacoes permitidas e proibidas apos assinatura
+- [x] Validar alteracoes permitidas por DocMDP
+- [x] Validar alteracoes permitidas por FieldMDP
+- [x] Permitir updates legitimos de DSS e timestamps documentais
+- [x] Rejeitar alteracoes suspeitas em objetos assinados
+- [x] Detectar substituicao de objetos por incremental update malicioso
+- [x] Validar cobertura da xref da revisao assinada
+- [x] Gerar relatorio de integridade incremental do PDF
 
-## 19.7 DSS, VRI e PAdES-LT
+19. Validacao CMS/CAdES
+
+Esta etapa transforma o CMS de algo gerado corretamente em algo que tambem pode
+ser validado com semantica PAdES.
+
+## 19.1 CMS interno
+
+- [x] Validar CMS internamente sem depender apenas do comando `openssl cms`
+- [x] Implementar parser CMS completo o suficiente para validacao PAdES
+- [x] Validar `contentType`, `messageDigest` e `SigningCertificateV2`
+- [x] Validar `ESSCertIDv2` contra o certificado do assinante
+- [x] Validar `issuerSerial` contra o certificado do assinante
+- [x] Validar algoritmo de digest e assinatura conforme politica configurada
+- [x] Validar RSA-PSS, ECDSA e parametros ASN.1 corretamente
+- [x] Suportar atributos assinados opcionais sem quebrar conformidade PAdES
+- [x] Tratar `signingTime` como opcional/configuravel conforme perfil
+- [x] Criar testes comparativos com CMS gerado pelo pyHanko
+
+20. Certificados, cadeia e revogacao
+
+So depois da validacao PDF/CMS estar confiavel faz sentido aprofundar cadeia,
+OCSP e CRL, porque essas evidencias dependem da assinatura correta.
+
+## 20.1 Cadeia X.509
+
+- [x] Corrigir suporte a multiplas trust anchors
+- [x] Construir cadeia X.509 por issuer/subject e Authority Key Identifier
+- [x] Validar Basic Constraints de CAs
+- [x] Validar Key Usage de CAs e certificado final
+- [x] Validar Extended Key Usage quando aplicavel
+- [x] Validar expiracao usando signing time ou timestamp confiavel
+- [x] Validar politicas de certificado quando configuradas
+- [x] Implementar path building com cadeias alternativas
+- [x] Suportar AIA fetching com cache e timeout
+- [x] Gerar resultado detalhado da cadeia de confianca
+
+## 20.2 OCSP e CRL
+
+- [x] Implementar parser OCSP real
+- [x] Validar assinatura da resposta OCSP
+- [x] Validar que o responder OCSP e autorizado
+- [x] Validar `CertID` da resposta contra o certificado consultado
+- [x] Validar status good/revoked/unknown por certificado
+- [x] Validar `thisUpdate`, `nextUpdate` e `producedAt`
+- [x] Validar nonce OCSP quando enviado
+- [x] Extrair certificados embutidos em BasicOCSPResponse
+- [x] Implementar parser CRL real
+- [x] Validar assinatura da CRL
+- [x] Validar CRL issuer, AKI, nextUpdate e certificados revogados
+- [x] Integrar OCSP/CRL com validacao de cadeia
+
+21. Timestamp, DSS, LT e LTA
+
+Esta parte vem depois da cadeia e revogacao porque LT/LTA so tem valor quando as
+evidencias embutidas sao verificadas de verdade.
+
+## 21.1 Timestamp RFC 3161
+
+- [ ] Validar assinatura do TimeStampToken
+- [ ] Validar certificado TSA e cadeia de confianca
+- [ ] Validar EKU `id-kp-timeStamping`
+- [ ] Validar `messageImprint` contra assinatura ou documento correto
+- [ ] Validar nonce quando aplicavel
+- [ ] Validar policy OID da TSA
+
+## 21.2 DSS e PAdES-LT
 
 - [ ] Criar representacao de `DocumentSecurityStore`
 - [ ] Deduplicar certificados, OCSPs e CRLs no DSS
@@ -381,21 +417,20 @@ comportamento do pyHanko.
 - [ ] Evitar escrever nova revisao quando DSS nao adiciona material novo
 - [ ] Criar validacao offline real de PAdES-B-LT
 
-## 19.8 Timestamp RFC 3161 e PAdES-LTA
+## 21.3 PAdES-LTA
 
-- [ ] Validar assinatura do TimeStampToken
-- [ ] Validar certificado TSA e cadeia de confianca
-- [ ] Validar EKU `id-kp-timeStamping`
-- [ ] Validar `messageImprint` contra assinatura ou documento correto
-- [ ] Validar nonce quando aplicavel
-- [ ] Validar policy OID da TSA
 - [ ] Criar assinatura `/DocTimeStamp` com cobertura correta do documento
 - [ ] Atualizar DSS antes/depois do timestamp conforme estrategia configurada
 - [ ] Implementar cadeia de archival timestamps
 - [ ] Validar ordem temporal das evidencias LTA
 - [ ] Criar renovacao de evidencias criptograficas
 
-## 19.9 Seed values, campos e aparencia
+22. Campos, seed values e formularios
+
+Esses itens sao importantes para PDFs corporativos com campos existentes, mas
+podem vir depois do core de validacao e LTV.
+
+## 22.1 Seed values, campos e locks
 
 - [ ] Ler e respeitar Seed Value Dictionary de campos existentes
 - [ ] Validar filtros e subfiltros exigidos pelo campo
@@ -408,34 +443,86 @@ comportamento do pyHanko.
 - [ ] Melhorar appearance stream para PDFs reais
 - [ ] Preservar Annots e Fields existentes sem sobrescrever indevidamente
 
-## 19.10 Interoperabilidade e fixtures
+23. Interoperabilidade e fixtures
 
+Agora entram testes cruzados. Eles devem validar o que foi implementado nas
+etapas anteriores, nao substituir validacao interna.
+
+## 23.1 Validadores e leitores externos
+
+- [ ] Testes com Adobe Acrobat
+- [ ] Testes com Adobe Reader
+- [ ] Testes com pyHanko
+- [ ] Testes com DSS Europeu
+- [ ] Testes com validadores ETSI
+- [ ] Testes de interoperabilidade internacional
+- [ ] Compatibilidade Windows Preview
+- [ ] Compatibilidade macOS Preview
 - [ ] Rodar validacao cruzada com pyHanko em PDFs gerados pelo PHP
 - [ ] Rodar validacao cruzada do PHP em PDFs gerados pelo pyHanko
+- [ ] Documentar divergencias conhecidas de interoperabilidade
+
+## 23.2 Fixtures de conformidade
+
+- [ ] Fixtures internacionais
+- [ ] PDFs de conformidade ETSI
 - [ ] Adicionar fixtures reais do pyHanko como testes de leitura
 - [ ] Testar PDFs assinados uma vez, duas vezes e com DocTimeStamp
 - [ ] Testar PDFs com xref stream, object stream e incremental updates complexos
 - [ ] Testar PDFs malformados e ataques de incremental update
-- [ ] Testar com Adobe Acrobat e Adobe Reader
-- [ ] Testar com DSS Europeu
-- [ ] Testar com validadores ETSI
-- [ ] Documentar divergencias conhecidas de interoperabilidade
 
-## 19.11 Performance e seguranca operacional
+24. Seguranca e performance operacional
+
+Quando o comportamento ja estiver correto, endurecer para uso em arquivos grandes
+e entradas hostis.
+
+## 24.1 Performance
 
 - [ ] Implementar assinatura e validacao por streaming
 - [ ] Evitar carregar PDF inteiro em memoria para arquivos grandes
+- [ ] Limites de memoria configuraveis
+- [ ] Limites de tamanho configuraveis
 - [ ] Configurar limite de tamanho de PDF
 - [ ] Configurar limite de tamanho de objeto PDF
 - [ ] Configurar limite de profundidade de objetos aninhados
-- [ ] Configurar timeout de TSA, OCSP, CRL e AIA
+
+## 24.2 Seguranca
+
+- [ ] Protecao contra malformed PDFs
+- [ ] Protecao contra object injection
+- [ ] Protecao contra xref corruption
 - [ ] Hardenizar parser ASN.1 contra entradas malformadas
 - [ ] Hardenizar parser PDF contra object injection
+- [ ] Configurar timeout de TSA, OCSP, CRL e AIA
 - [ ] Remover arquivos temporarios com tratamento de erro robusto
 - [ ] Evitar vazamento de material sensivel em excecoes e logs
 
-## 19.12 Falhas atuais da suite
+25. Documentacao e compliance
 
-- [ ] Corrigir teste de CMS comparativo que espera `signingTime`
-- [ ] Corrigir suporte a multiplas trust anchors em `X509TrustStoreTest`
-- [ ] Reexecutar `vendor/bin/phpunit` ate a suite ficar verde
+Ultima camada: documentar o que existe, provar conformidade e manter verificacao
+continua. A publicacao fica fora deste ciclo inicial.
+
+## 25.1 Documentacao
+
+- [ ] Documentacao de API PAdES
+- [ ] Documentacao arquitetural
+- [ ] Guia de interoperabilidade
+- [ ] Guia de multiplas assinaturas
+- [ ] Guia de timestamp
+- [ ] Guia de LTV/LTA
+- [ ] Guia de signer providers
+- [ ] Mapeamento ETSI EN 319 142
+- [ ] Verificacao formal de conformidade ETSI
+- [ ] Matriz de conformidade ETSI EN 319 142
+- [ ] Matriz de conformidade ISO 32000
+- [ ] Relatorio ETSI detalhado
+- [ ] Relatorio de integridade PDF
+- [ ] Relatorio de cadeia criptografica
+
+## 25.2 Qualidade continua
+
+- [ ] Configurar CI para PHP 8.2, 8.3 e 8.4
+- [ ] Rodar suite completa em ambiente limpo sem arquivos locais secretos
+- [ ] Rodar assinatura ICP real fora do CI e registrar resultado manual
+- [ ] Criar checklist manual de validacao no ITI
+- [ ] Criar checklist manual de validacao no Adobe

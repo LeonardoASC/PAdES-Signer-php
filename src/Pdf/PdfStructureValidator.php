@@ -74,6 +74,10 @@ final readonly class PdfStructureValidator
         $contentLength = strlen($structure->content);
 
         foreach ($structure->trailers as $trailer) {
+            if ($trailer->hasEntry('Encrypt')) {
+                throw new RuntimeException('PDF criptografado nao e suportado.');
+            }
+
             if ($trailer->startXref < 0 || $trailer->startXref >= $contentLength) {
                 throw new RuntimeException('startxref aponta para fora do PDF.');
             }
@@ -112,8 +116,10 @@ final readonly class PdfStructureValidator
     ): int {
         $highest = 0;
 
-        if (preg_match_all('/(?m)(\d+)\s+\d+\s+obj\b/', substr($structure->content, 0, $offset), $matches)) {
-            $highest = max(array_map('intval', $matches[1]));
+        foreach ($structure->objects as $object) {
+            if ($object->offset < $offset) {
+                $highest = max($highest, $object->number);
+            }
         }
 
         return $highest;

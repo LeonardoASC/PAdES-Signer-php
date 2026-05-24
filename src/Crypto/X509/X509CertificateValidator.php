@@ -34,6 +34,7 @@ final readonly class X509CertificateValidator
             ...$this->validateTemporalWindows($parsed, $context),
             ...$this->validateKeyUsage($parsed, $policy),
             ...$this->validateExtendedKeyUsage($parsed, $policy),
+            ...$this->validateCertificatePolicies($parsed, $policy),
         ];
 
         return new CertificateValidationResult(
@@ -47,6 +48,7 @@ final readonly class X509CertificateValidator
                 'validTo' => $parsed['validTo_time_t'] ?? null,
                 'keyUsage' => $parsed['extensions']['keyUsage'] ?? null,
                 'extendedKeyUsage' => $parsed['extensions']['extendedKeyUsage'] ?? null,
+                'certificatePolicies' => $parsed['extensions']['certificatePolicies'] ?? null,
             ]
         );
     }
@@ -149,6 +151,35 @@ final readonly class X509CertificateValidator
     }
 
     /**
+     * @param array<string, mixed> $parsed
+     * @return array<string>
+     */
+    private function validateCertificatePolicies(
+        array $parsed,
+        CertificateValidationPolicy $policy
+    ): array {
+        $certificatePolicies = $parsed['extensions']['certificatePolicies'] ?? null;
+
+        if (! is_string($certificatePolicies) || trim($certificatePolicies) === '') {
+            return $policy->requireCertificatePolicy
+                ? ['Certificado do signatario nao possui politicas de certificado.']
+                : [];
+        }
+
+        if ($policy->allowedCertificatePolicies === []) {
+            return [];
+        }
+
+        foreach ($policy->allowedCertificatePolicies as $policyOid) {
+            if (str_contains($certificatePolicies, $policyOid)) {
+                return [];
+            }
+        }
+
+        return ['Certificado do signatario nao possui politica de certificado aceita.'];
+    }
+
+    /**
      * @return array<string>
      */
     private function normalizedTokens(string $value): array
@@ -162,6 +193,9 @@ final readonly class X509CertificateValidator
             'clientauth' => 'clientauth',
             'tlswebclientauthentication' => 'clientauth',
             'codesigning' => 'codesigning',
+            'timestamping' => 'timestamping',
+            'times stamping' => 'timestamping',
+            '1355155738' => 'timestamping',
             '13551557336' => '13551557336',
         ];
 

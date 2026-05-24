@@ -74,6 +74,23 @@ final class X509CertificateValidatorTest extends TestCase
         );
     }
 
+    public function test_it_validates_required_certificate_policy(): void
+    {
+        $certificate = $this->fixtureCertificate();
+
+        $result = (new X509CertificateValidator())->validate(
+            certificatePem: $certificate->getPublicCertificate(),
+            context: $this->contextAtValidTime($certificate->getPublicCertificate()),
+            policy: new CertificateValidationPolicy(requireCertificatePolicy: true)
+        );
+
+        $this->assertFalse($result->valid);
+        $this->assertContains(
+            'Certificado do signatario nao possui politicas de certificado.',
+            $result->messages
+        );
+    }
+
     public function test_it_validates_expiration_at_validation_time(): void
     {
         $certificatePem = $this->fixtureCertificate()->getPublicCertificate();

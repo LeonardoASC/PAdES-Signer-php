@@ -53,7 +53,8 @@ final readonly class PadesSigner
             algorithmPolicy: $options->algorithmPolicy(),
             includeSigningTime: $options->includeSigningTime,
             appendSignaturePage: $options->appendSignaturePage,
-            signaturePageMediaBox: $options->signaturePageMediaBox
+            signaturePageMediaBox: $options->signaturePageMediaBox,
+            signaturePageRect: $options->signaturePageRect
         );
     }
 }

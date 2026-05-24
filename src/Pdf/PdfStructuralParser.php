@@ -8,17 +8,21 @@ use RuntimeException;
 
 final readonly class PdfStructuralParser
 {
+    private const int MAX_DECODED_STREAM_BYTES = 104857600;
+
     public function parse(string $pdfContent): PdfDocumentStructure
     {
         $objects = $this->parseObjects($pdfContent);
         $objects = $this->mergeObjectStreamObjects($objects);
+        $tableTrailers = $this->parseTableTrailers($pdfContent);
         $xrefTables = [
             ...$this->parseXrefTables($pdfContent),
             ...$this->parseXrefStreams($objects),
         ];
         $trailers = [
-            ...$this->parseTableTrailers($pdfContent),
+            ...$tableTrailers,
             ...$this->parseXrefStreamTrailers($pdfContent, $objects),
+            ...$this->parseHybridXrefStreamTrailers($tableTrailers, $objects),
         ];
 
         usort(
@@ -39,29 +43,7 @@ final readonly class PdfStructuralParser
      */
     private function parseObjects(string $pdfContent): array
     {
-        if (! preg_match_all('/(?m)(\d+)\s+(\d+)\s+obj\b(.*?)\bendobj\b/s', $pdfContent, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE)) {
-            return [];
-        }
-
-        $objects = [];
-
-        foreach ($matches as $match) {
-            $number = (int) $match[1][0];
-            $generation = (int) $match[2][0];
-            $offset = $match[0][1];
-            $body = trim($match[3][0]);
-
-            $objects[$number] = new PdfIndirectObject(
-                number: $number,
-                generation: $generation,
-                offset: $offset,
-                body: $body
-            );
-        }
-
-        ksort($objects);
-
-        return $objects;
+        return (new PdfIndirectObjectScanner())->scan($pdfContent);
     }
 
     /**
@@ -194,6 +176,38 @@ final readonly class PdfStructuralParser
     }
 
     /**
+     * @param array<int, PdfTrailer> $tableTrailers
+     * @param array<int, PdfIndirectObject> $objects
+     * @return array<int, PdfTrailer>
+     */
+    private function parseHybridXrefStreamTrailers(array $tableTrailers, array $objects): array
+    {
+        $trailers = [];
+
+        foreach ($tableTrailers as $tableTrailer) {
+            $xrefStreamOffset = $tableTrailer->getInteger('XRefStm');
+
+            if ($xrefStreamOffset === null) {
+                continue;
+            }
+
+            $xrefObject = $this->objectAtOffset($objects, $xrefStreamOffset);
+
+            if ($xrefObject === null || ! (new PdfDictionaryReader())->hasNameValue($this->streamDictionary($xrefObject->body), 'Type', 'XRef')) {
+                throw new RuntimeException('/XRefStm nao aponta para xref stream valido.');
+            }
+
+            $trailers[] = new PdfTrailer(
+                offset: $xrefObject->offset,
+                dictionary: $this->streamDictionary($xrefObject->body),
+                startXref: $xrefObject->offset
+            );
+        }
+
+        return $trailers;
+    }
+
+    /**
      * @return array<int, array<int, array{offset:int,generation:int,in_use:bool,type?:int,object_stream?:int,index?:int}>>
      */
     private function parseXrefTables(string $pdfContent): array
@@ -261,7 +275,7 @@ final readonly class PdfStructuralParser
         $tables = [];
 
         foreach ($objects as $object) {
-            if (! str_contains($object->body, '/Type /XRef')) {
+            if (! (new PdfDictionaryReader())->hasNameValue($this->streamDictionary($object->body), 'Type', 'XRef')) {
                 continue;
             }
 
@@ -383,14 +397,14 @@ final readonly class PdfStructuralParser
             return $encoded;
         }
 
-        if (! str_contains($this->streamDictionary($object->body), '/FlateDecode')) {
-            throw new RuntimeException('Stream PDF com filtro nao suportado.');
-        }
+        $decoded = $encoded;
 
-        $decoded = gzuncompress($encoded);
+        foreach ($this->streamFilters($this->streamDictionary($object->body)) as $filter) {
+            $decoded = $this->applyFilter($decoded, $filter);
 
-        if ($decoded === false) {
-            throw new RuntimeException('Nao foi possivel descomprimir FlateDecode.');
+            if (strlen($decoded) > self::MAX_DECODED_STREAM_BYTES) {
+                throw new RuntimeException('Stream PDF decodificado excede o limite suportado.');
+            }
         }
 
         return $decoded;
@@ -416,11 +430,7 @@ final readonly class PdfStructuralParser
 
     private function dictionaryInteger(string $dictionary, string $name): ?int
     {
-        if (! preg_match('/\/' . preg_quote($name, '/') . '\s+(\d+)\b/', $dictionary, $matches)) {
-            return null;
-        }
-
-        return (int) $matches[1];
+        return (new PdfDictionaryReader())->getInteger($dictionary, $name);
     }
 
     /**
@@ -428,15 +438,194 @@ final readonly class PdfStructuralParser
      */
     private function dictionaryIntegerArray(string $dictionary, string $name): array
     {
-        if (! preg_match('/\/' . preg_quote($name, '/') . '\s*\[(.*?)\]/s', $dictionary, $matches)) {
+        return (new PdfDictionaryReader())->getIntegerArray($dictionary, $name);
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function streamFilters(string $dictionary): array
+    {
+        $value = trim((new PdfDictionaryReader())->getValue($dictionary, 'Filter') ?? '');
+
+        if ($value === '') {
             return [];
         }
 
-        if (! preg_match_all('/\d+/', $matches[1], $numbers)) {
+        if (str_starts_with($value, '/')) {
+            return [substr($value, 1)];
+        }
+
+        if (! str_starts_with($value, '[') || ! str_ends_with($value, ']')) {
+            throw new RuntimeException('Filtro de stream PDF invalido.');
+        }
+
+        $filters = [];
+        $parts = preg_split('/\s+/', trim(substr($value, 1, -1)));
+
+        if ($parts === false) {
             return [];
         }
 
-        return array_map('intval', $numbers[0]);
+        foreach ($parts as $part) {
+            if ($part === '') {
+                continue;
+            }
+
+            if (! str_starts_with($part, '/')) {
+                throw new RuntimeException('Filtro de stream PDF invalido.');
+            }
+
+            $filters[] = substr($part, 1);
+        }
+
+        return $filters;
+    }
+
+    private function applyFilter(string $content, string $filter): string
+    {
+        return match ($filter) {
+            'FlateDecode', 'Fl' => $this->flateDecode($content),
+            'ASCIIHexDecode', 'AHx' => $this->asciiHexDecode($content),
+            'ASCII85Decode', 'A85' => $this->ascii85Decode($content),
+            'RunLengthDecode', 'RL' => $this->runLengthDecode($content),
+            default => throw new RuntimeException("Stream PDF com filtro nao suportado: {$filter}."),
+        };
+    }
+
+    private function flateDecode(string $content): string
+    {
+        $decoded = gzuncompress($content);
+
+        if ($decoded === false) {
+            throw new RuntimeException('Nao foi possivel descomprimir FlateDecode.');
+        }
+
+        return $decoded;
+    }
+
+    private function asciiHexDecode(string $content): string
+    {
+        $hex = '';
+
+        for ($i = 0; $i < strlen($content); $i++) {
+            $char = $content[$i];
+
+            if ($char === '>') {
+                break;
+            }
+
+            if (preg_match('/\s/', $char) === 1) {
+                continue;
+            }
+
+            if (! ctype_xdigit($char)) {
+                throw new RuntimeException('ASCIIHexDecode invalido.');
+            }
+
+            $hex .= $char;
+        }
+
+        if (strlen($hex) % 2 === 1) {
+            $hex .= '0';
+        }
+
+        $decoded = hex2bin($hex);
+
+        if ($decoded === false) {
+            throw new RuntimeException('ASCIIHexDecode invalido.');
+        }
+
+        return $decoded;
+    }
+
+    private function ascii85Decode(string $content): string
+    {
+        if (function_exists('convert_uudecode')) {
+            // PDF ASCII85 is not uuencode; keep the explicit decoder below.
+        }
+
+        $data = preg_replace('/\s+/', '', $content);
+        $data = str_replace(['<~', '~>'], '', $data ?? '');
+        $decoded = '';
+        $tuple = [];
+
+        for ($i = 0; $i < strlen($data); $i++) {
+            $char = $data[$i];
+
+            if ($char === 'z' && $tuple === []) {
+                $decoded .= "\0\0\0\0";
+                continue;
+            }
+
+            $ord = ord($char);
+
+            if ($ord < 33 || $ord > 117) {
+                throw new RuntimeException('ASCII85Decode invalido.');
+            }
+
+            $tuple[] = $ord - 33;
+
+            if (count($tuple) === 5) {
+                $decoded .= $this->ascii85Tuple($tuple, 4);
+                $tuple = [];
+            }
+        }
+
+        if ($tuple !== []) {
+            $bytes = count($tuple) - 1;
+
+            while (count($tuple) < 5) {
+                $tuple[] = 84;
+            }
+
+            $decoded .= $this->ascii85Tuple($tuple, $bytes);
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * @param array<int> $tuple
+     */
+    private function ascii85Tuple(array $tuple, int $bytes): string
+    {
+        $value = 0;
+
+        foreach ($tuple as $part) {
+            $value = ($value * 85) + $part;
+        }
+
+        $chunk = pack('N', $value);
+
+        return substr($chunk, 0, $bytes);
+    }
+
+    private function runLengthDecode(string $content): string
+    {
+        $decoded = '';
+        $offset = 0;
+
+        while ($offset < strlen($content)) {
+            $length = ord($content[$offset++]);
+
+            if ($length === 128) {
+                break;
+            }
+
+            if ($length <= 127) {
+                $count = $length + 1;
+                $decoded .= substr($content, $offset, $count);
+                $offset += $count;
+                continue;
+            }
+
+            $count = 257 - $length;
+            $byte = $content[$offset++] ?? '';
+            $decoded .= str_repeat($byte, $count);
+        }
+
+        return $decoded;
     }
 
     /**
