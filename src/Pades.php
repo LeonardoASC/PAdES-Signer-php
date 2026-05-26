@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NihilLabs\Pades;
 
 use NihilLabs\Pades\Signing\PfxSignatureCredential;
+use InvalidArgumentException;
 
 final readonly class Pades
 {
@@ -13,16 +14,9 @@ final readonly class Pades
         string $outputPdf,
         string $certificatePath,
         string $certificatePassword,
-        ?PadesSignatureOptions $options = null
+        PadesSignatureOptions $options
     ): void {
-        $options ??= new PadesSignatureOptions(
-            visibleSignature: true,
-            signatureName: 'Admin User',
-            signatureReason: 'Assinatura digital de documento assistencial',
-            signatureLocation: 'Prontuario Eletronico MPTO',
-            signatureContactInfo: 'admin@example.com',
-            appendSignaturePage: true
-        );
+        self::assertRequiredSignatureMetadata($options);
 
         (new PadesSigner())->sign(
             inputPdf: $inputPdf,
@@ -40,16 +34,9 @@ final readonly class Pades
         string $outputPdf,
         string $certificateContents,
         string $certificatePassword,
-        ?PadesSignatureOptions $options = null
+        PadesSignatureOptions $options
     ): void {
-        $options ??= new PadesSignatureOptions(
-            visibleSignature: true,
-            signatureName: 'Admin User',
-            signatureReason: 'Assinatura digital de documento assistencial',
-            signatureLocation: 'Prontuario Eletronico MPTO',
-            signatureContactInfo: 'admin@example.com',
-            appendSignaturePage: true
-        );
+        self::assertRequiredSignatureMetadata($options);
 
         (new PadesSigner())->sign(
             inputPdf: $inputPdf,
@@ -60,5 +47,23 @@ final readonly class Pades
             ),
             options: $options
         );
+    }
+
+    private static function assertRequiredSignatureMetadata(PadesSignatureOptions $options): void
+    {
+        $required = [
+            'signatureName' => $options->signatureName,
+            'signatureReason' => $options->signatureReason,
+            'signatureLocation' => $options->signatureLocation,
+            'signatureContactInfo' => $options->signatureContactInfo,
+        ];
+
+        foreach ($required as $field => $value) {
+            if (! is_string($value) || trim($value) === '') {
+                throw new InvalidArgumentException(
+                    "Informe {$field} em PadesSignatureOptions."
+                );
+            }
+        }
     }
 }
