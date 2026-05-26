@@ -64,6 +64,30 @@ Pades::sign(
 );
 ```
 
+Certificate imported by the user and stored outside the filesystem:
+
+```php
+use NihilLabs\Pades\Certificate\PfxCertificateImporter;
+use NihilLabs\Pades\Pades;
+
+$uploadedPfxContents = file_get_contents($_FILES['certificate']['tmp_name']);
+
+$metadata = (new PfxCertificateImporter())->inspectContents(
+    contents: $uploadedPfxContents,
+    password: $passwordTypedOnImport
+);
+
+// Store $uploadedPfxContents and selected $metadata fields.
+// Do not store the certificate password.
+
+Pades::signWithPfxContents(
+    inputPdf: 'document.pdf',
+    outputPdf: 'document-signed.pdf',
+    certificateContents: $storedPfxContents,
+    certificatePassword: $passwordTypedWhenSigning
+);
+```
+
 Visible signature with custom placement:
 
 ```php

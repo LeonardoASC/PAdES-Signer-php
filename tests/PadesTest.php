@@ -45,6 +45,35 @@ final class PadesTest extends TestCase
         $this->assertStringContainsString('/AP <<', $content);
     }
 
+    public function test_it_signs_pdf_using_static_api_with_pfx_contents(): void
+    {
+        $input = __DIR__ . '/Output/pades-api-contents-input.pdf';
+
+        $output = __DIR__ . '/Output/pades-api-contents-output.pdf';
+
+        (new MinimalPdfGenerator())
+            ->generate($input);
+
+        $contents = file_get_contents(__DIR__ . '/Fixtures/certificate.pfx');
+
+        $this->assertNotFalse($contents);
+
+        Pades::signWithPfxContents(
+            inputPdf: $input,
+            outputPdf: $output,
+            certificateContents: $contents,
+            certificatePassword: '123456'
+        );
+
+        $this->assertFileExists($output);
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertStringContainsString('/Type /Sig', $content);
+        $this->assertStringContainsString('/ByteRange [0 ', $content);
+    }
+
     public function test_it_signs_pdf_using_public_pades_signer_api(): void
     {
         $input = __DIR__ . '/Fixtures/sample.pdf';

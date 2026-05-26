@@ -31,6 +31,16 @@ final readonly class PfxSignatureCredential implements PrivateKeySignatureCreden
         );
     }
 
+    public static function fromContents(string $contents, string $password): self
+    {
+        return new self(
+            PfxCertificate::fromContents(
+                contents: $contents,
+                password: $password
+            )
+        );
+    }
+
     public function getPrivateKey(): \OpenSSLAsymmetricKey
     {
         return $this->certificate->getPrivateKey();
