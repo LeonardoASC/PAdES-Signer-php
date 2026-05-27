@@ -1,0 +1,128 @@
+<?php
+
+declare(strict_types=1);
+
+namespace NihilLabs\Pades;
+
+use InvalidArgumentException;
+use NihilLabs\Pades\Crypto\Validation\LtvValidationMaterial;
+use NihilLabs\Pades\Crypto\Validation\RealLtvValidationMaterialFactory;
+use NihilLabs\Pades\Pdf\PdfLtaEnricher;
+use NihilLabs\Pades\Pdf\PdfLtvEnricher;
+use NihilLabs\Pades\Timestamp\TimestampProviderInterface;
+use RuntimeException;
+
+final readonly class PadesLtvEnricher
+{
+    public function __construct(
+        private PdfLtvEnricher $ltEnricher = new PdfLtvEnricher(),
+        private PdfLtaEnricher $ltaEnricher = new PdfLtaEnricher(),
+        private RealLtvValidationMaterialFactory $materialFactory = new RealLtvValidationMaterialFactory()
+    ) {}
+
+    public function addLt(
+        string $signedPdfContent,
+        LtvValidationMaterial $material
+    ): string {
+        return $this->ltEnricher->enrich(
+            signedPdfContent: $signedPdfContent,
+            material: $material
+        );
+    }
+
+    /**
+     * @param array<string> $candidateCertificatesPem
+     */
+    public function addRealLt(
+        string $signedPdfContent,
+        string $signerCertificatePem,
+        array $candidateCertificatesPem = []
+    ): string {
+        return $this->addLt(
+            signedPdfContent: $signedPdfContent,
+            material: $this->materialFactory->create(
+                signerCertificatePem: $signerCertificatePem,
+                candidateCertificatesPem: $candidateCertificatesPem
+            )
+        );
+    }
+
+    public function addLta(
+        string $ltPdfContent,
+        TimestampProviderInterface $timestampProvider,
+        ?string $fieldName = null
+    ): string {
+        return $this->ltaEnricher->addArchiveTimestamp(
+            ltPdfContent: $ltPdfContent,
+            timestampProvider: $timestampProvider,
+            fieldName: $fieldName
+        );
+    }
+
+    public function addLtFile(
+        string $inputPdf,
+        string $outputPdf,
+        LtvValidationMaterial $material
+    ): void {
+        $this->write(
+            outputPdf: $outputPdf,
+            content: $this->addLt(
+                signedPdfContent: $this->read($inputPdf),
+                material: $material
+            )
+        );
+    }
+
+    /**
+     * @param array<string> $candidateCertificatesPem
+     */
+    public function addRealLtFile(
+        string $inputPdf,
+        string $outputPdf,
+        string $signerCertificatePem,
+        array $candidateCertificatesPem = []
+    ): void {
+        $this->write(
+            outputPdf: $outputPdf,
+            content: $this->addRealLt(
+                signedPdfContent: $this->read($inputPdf),
+                signerCertificatePem: $signerCertificatePem,
+                candidateCertificatesPem: $candidateCertificatesPem
+            )
+        );
+    }
+
+    public function addLtaFile(
+        string $inputPdf,
+        string $outputPdf,
+        TimestampProviderInterface $timestampProvider,
+        ?string $fieldName = null
+    ): void {
+        $this->write(
+            outputPdf: $outputPdf,
+            content: $this->addLta(
+                ltPdfContent: $this->read($inputPdf),
+                timestampProvider: $timestampProvider,
+                fieldName: $fieldName
+            )
+        );
+    }
+
+    private function read(string $inputPdf): string
+    {
+        $pdf = file_get_contents($inputPdf);
+
+        if ($pdf === false) {
+            throw new InvalidArgumentException("PDF nao encontrado ou ilegivel: {$inputPdf}");
+        }
+
+        return $pdf;
+    }
+
+    private function write(string $outputPdf, string $content): void
+    {
+        if (file_put_contents($outputPdf, $content) === false) {
+            throw new RuntimeException("Nao foi possivel escrever PDF: {$outputPdf}");
+        }
+    }
+}

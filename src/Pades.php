@@ -14,7 +14,7 @@ final readonly class Pades
         string $certificatePath,
         string $certificatePassword,
         ?PadesSignatureOptions $options = null
-    ): void {
+    ): PadesSignatureResult {
         $options ??= new PadesSignatureOptions(
             visibleSignature: true,
             signatureName: 'Admin User',
@@ -24,7 +24,7 @@ final readonly class Pades
             appendSignaturePage: true
         );
 
-        (new PadesSigner())->sign(
+        return (new PadesSigner())->sign(
             inputPdf: $inputPdf,
             outputPdf: $outputPdf,
             credential: new PfxSignatureCredential(
