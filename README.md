@@ -55,12 +55,50 @@ composer require nihillabs/pades-core
 
 ```php
 use NihilLabs\Pades\Pades;
+use NihilLabs\Pades\PadesSignatureOptions;
 
 Pades::sign(
     inputPdf: 'document.pdf',
     outputPdf: 'document-signed.pdf',
     certificatePath: 'certificate.pfx',
-    certificatePassword: getenv('PFX_PASSWORD')
+    certificatePassword: getenv('PFX_PASSWORD'),
+    options: new PadesSignatureOptions(
+        signatureName: 'Signer Name',
+        signatureReason: 'Digital signature',
+        signatureLocation: 'Internal system',
+        signatureContactInfo: 'signer@example.com'
+    )
+);
+```
+
+Certificate imported by the user and stored outside the filesystem:
+
+```php
+use NihilLabs\Pades\Certificate\PfxCertificateImporter;
+use NihilLabs\Pades\Pades;
+use NihilLabs\Pades\PadesSignatureOptions;
+
+$uploadedPfxContents = file_get_contents($_FILES['certificate']['tmp_name']);
+
+$metadata = (new PfxCertificateImporter())->inspectContents(
+    contents: $uploadedPfxContents,
+    password: $passwordTypedOnImport
+);
+
+// Store $uploadedPfxContents and selected $metadata fields.
+// Do not store the certificate password.
+
+Pades::signWithPfxContents(
+    inputPdf: 'document.pdf',
+    outputPdf: 'document-signed.pdf',
+    certificateContents: $storedPfxContents,
+    certificatePassword: $passwordTypedWhenSigning,
+    options: new PadesSignatureOptions(
+        signatureName: $signerName,
+        signatureReason: 'Digital signature',
+        signatureLocation: 'Internal system',
+        signatureContactInfo: $signerEmail
+    )
 );
 ```
 

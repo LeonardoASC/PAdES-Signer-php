@@ -15,13 +15,15 @@ final readonly class PadesBtValidator
     public function __construct(
         private PadesBbValidator $bbValidator = new PadesBbValidator(),
         private SignatureTimestampTokenExtractor $timestampTokenExtractor = new SignatureTimestampTokenExtractor(),
-        private Rfc3161TimestampValidator $timestampValidator = new Rfc3161TimestampValidator()
+        private Rfc3161TimestampValidator $timestampValidator = new Rfc3161TimestampValidator(),
+        private Rfc3161TimestampValidationPolicy $defaultTimestampPolicy = new Rfc3161TimestampValidationPolicy()
     ) {}
 
     public function validatePdf(
         string $pdfContent,
-        Rfc3161TimestampValidationPolicy $timestampPolicy = new Rfc3161TimestampValidationPolicy()
+        ?Rfc3161TimestampValidationPolicy $timestampPolicy = null
     ): PadesProfileValidationResult {
+        $timestampPolicy ??= $this->defaultTimestampPolicy;
         $bb = $this->bbValidator->validatePdf($pdfContent);
         $checks = $bb->checks;
         $messages = $bb->messages;

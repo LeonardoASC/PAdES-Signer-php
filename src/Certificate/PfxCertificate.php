@@ -12,9 +12,19 @@ final readonly class PfxCertificate
 
     public function __construct(
         private string $path,
-        private string $password
+        private string $password,
+        private ?string $contents = null
     ) {
         $this->certificates = $this->load();
+    }
+
+    public static function fromContents(string $contents, string $password): self
+    {
+        return new self(
+            path: '',
+            password: $password,
+            contents: $contents
+        );
     }
 
     public function getPrivateKey(): \OpenSSLAsymmetricKey
@@ -134,13 +144,15 @@ final readonly class PfxCertificate
 
     private function load(): array
     {
-        if (! file_exists($this->path)) {
+        $content = $this->contents;
+
+        if ($content === null && ! file_exists($this->path)) {
             throw new RuntimeException(
                 "Certificado não encontrado: {$this->path}"
             );
         }
 
-        $content = file_get_contents($this->path);
+        $content ??= file_get_contents($this->path);
 
         if ($content === false) {
             throw new RuntimeException(

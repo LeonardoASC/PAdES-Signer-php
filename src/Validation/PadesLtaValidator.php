@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades\Validation;
 
+use NihilLabs\Pades\Crypto\Timestamp\Rfc3161TimestampValidationPolicy;
 use NihilLabs\Pades\Crypto\Timestamp\Rfc3161TimestampValidator;
 use NihilLabs\Pades\Pdf\PdfDocTimeStampInspector;
 
@@ -12,7 +13,8 @@ final readonly class PadesLtaValidator
     public function __construct(
         private PadesLtValidator $ltValidator = new PadesLtValidator(),
         private PdfDocTimeStampInspector $docTimeStampInspector = new PdfDocTimeStampInspector(),
-        private Rfc3161TimestampValidator $timestampValidator = new Rfc3161TimestampValidator()
+        private Rfc3161TimestampValidator $timestampValidator = new Rfc3161TimestampValidator(),
+        private Rfc3161TimestampValidationPolicy $timestampPolicy = new Rfc3161TimestampValidationPolicy()
     ) {}
 
     public function validatePdf(string $pdfContent): PadesProfileValidationResult
@@ -30,7 +32,8 @@ final readonly class PadesLtaValidator
 
         if ($checks['document_timestamp']) {
             $timestamp = $this->timestampValidator->validateToken(
-                $this->docTimeStampInspector->extractLatestDocumentTimestampToken($pdfContent)
+                tokenDer: $this->docTimeStampInspector->extractLatestDocumentTimestampToken($pdfContent),
+                policy: $this->timestampPolicy
             );
             $checks['archival_timestamp_token_valid'] = $timestamp->valid;
 

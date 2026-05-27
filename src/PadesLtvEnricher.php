@@ -7,6 +7,7 @@ namespace NihilLabs\Pades;
 use InvalidArgumentException;
 use NihilLabs\Pades\Crypto\Validation\LtvValidationMaterial;
 use NihilLabs\Pades\Crypto\Validation\RealLtvValidationMaterialFactory;
+use NihilLabs\Pades\Crypto\X509\OpenSslCertificateChainValidator;
 use NihilLabs\Pades\Pdf\PdfLtaEnricher;
 use NihilLabs\Pades\Pdf\PdfLtvEnricher;
 use NihilLabs\Pades\Timestamp\TimestampProviderInterface;
@@ -36,13 +37,36 @@ final readonly class PadesLtvEnricher
     public function addRealLt(
         string $signedPdfContent,
         string $signerCertificatePem,
-        array $candidateCertificatesPem = []
+        array $candidateCertificatesPem = [],
+        ?PadesTrustStore $trustStore = null
     ): string {
+        $materialCertificatesPem = $candidateCertificatesPem;
+
+        if ($trustStore !== null) {
+            $chain = (new OpenSslCertificateChainValidator())
+                ->validateCertificateChain(
+                    signerCertificatePem: $signerCertificatePem,
+                    candidateCertificatesPem: $candidateCertificatesPem,
+                    trustStore: $trustStore
+                );
+
+            if (! $chain->trusted) {
+                throw new RuntimeException(
+                    $chain->messages[0] ?? 'Cadeia X.509 nao ancora na trust store configurada.'
+                );
+            }
+
+            $materialCertificatesPem = [
+                ...$candidateCertificatesPem,
+                ...$trustStore->getTrustedCertificatesPem(),
+            ];
+        }
+
         return $this->addLt(
             signedPdfContent: $signedPdfContent,
             material: $this->materialFactory->create(
                 signerCertificatePem: $signerCertificatePem,
-                candidateCertificatesPem: $candidateCertificatesPem
+                candidateCertificatesPem: $materialCertificatesPem
             )
         );
     }
@@ -80,14 +104,16 @@ final readonly class PadesLtvEnricher
         string $inputPdf,
         string $outputPdf,
         string $signerCertificatePem,
-        array $candidateCertificatesPem = []
+        array $candidateCertificatesPem = [],
+        ?PadesTrustStore $trustStore = null
     ): void {
         $this->write(
             outputPdf: $outputPdf,
             content: $this->addRealLt(
                 signedPdfContent: $this->read($inputPdf),
                 signerCertificatePem: $signerCertificatePem,
-                candidateCertificatesPem: $candidateCertificatesPem
+                candidateCertificatesPem: $candidateCertificatesPem,
+                trustStore: $trustStore
             )
         );
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NihilLabs\Pades;
 
 use InvalidArgumentException;
+use NihilLabs\Pades\Crypto\Timestamp\Rfc3161TimestampValidationPolicy;
 use NihilLabs\Pades\Validation\PadesBbValidator;
 use NihilLabs\Pades\Validation\PadesBtValidator;
 use NihilLabs\Pades\Validation\PadesLtValidator;
@@ -19,6 +20,32 @@ final readonly class PadesValidator
         private PadesLtValidator $ltValidator = new PadesLtValidator(),
         private PadesLtaValidator $ltaValidator = new PadesLtaValidator()
     ) {}
+
+    public static function withTsaTrustStore(PadesTrustStore $tsaTrustStore): self
+    {
+        $timestampPolicy = new Rfc3161TimestampValidationPolicy(
+            tsaTrustStore: $tsaTrustStore,
+            requireTsaChainValidation: true
+        );
+        $bbValidator = new PadesBbValidator();
+        $btValidator = new PadesBtValidator(
+            bbValidator: $bbValidator,
+            defaultTimestampPolicy: $timestampPolicy
+        );
+        $ltValidator = new PadesLtValidator(
+            btValidator: $btValidator
+        );
+
+        return new self(
+            bbValidator: $bbValidator,
+            btValidator: $btValidator,
+            ltValidator: $ltValidator,
+            ltaValidator: new PadesLtaValidator(
+                ltValidator: $ltValidator,
+                timestampPolicy: $timestampPolicy
+            )
+        );
+    }
 
     public function validateFile(string $pdfPath): PadesValidationResult
     {

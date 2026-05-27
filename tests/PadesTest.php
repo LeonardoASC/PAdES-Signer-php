@@ -9,6 +9,7 @@ use NihilLabs\Pades\PadesSignatureOptions;
 use NihilLabs\Pades\PadesSigner;
 use NihilLabs\Pades\Pdf\MinimalPdfGenerator;
 use NihilLabs\Pades\Signing\PfxSignatureCredential;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class PadesTest extends TestCase
@@ -26,7 +27,15 @@ final class PadesTest extends TestCase
             inputPdf: $input,
             outputPdf: $output,
             certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
-            certificatePassword: '123456'
+            certificatePassword: '123456',
+            options: new PadesSignatureOptions(
+                visibleSignature: true,
+                signatureName: 'Public PAdES API',
+                signatureReason: 'Assinatura digital de teste',
+                signatureLocation: 'Ambiente de testes',
+                signatureContactInfo: 'test@example.com',
+                appendSignaturePage: true
+            )
         );
 
         $this->assertFileExists($output);
@@ -43,6 +52,43 @@ final class PadesTest extends TestCase
         $this->assertStringContainsString('/BBox [0 0 499 580]', $content);
         $this->assertStringContainsString('/F 132', $content);
         $this->assertStringContainsString('/AP <<', $content);
+    }
+
+    public function test_it_signs_pdf_using_static_api_with_pfx_contents(): void
+    {
+        $input = __DIR__ . '/Output/pades-api-contents-input.pdf';
+
+        $output = __DIR__ . '/Output/pades-api-contents-output.pdf';
+
+        (new MinimalPdfGenerator())
+            ->generate($input);
+
+        $contents = file_get_contents(__DIR__ . '/Fixtures/certificate.pfx');
+
+        $this->assertNotFalse($contents);
+
+        Pades::signWithPfxContents(
+            inputPdf: $input,
+            outputPdf: $output,
+            certificateContents: $contents,
+            certificatePassword: '123456',
+            options: new PadesSignatureOptions(
+                visibleSignature: true,
+                signatureName: 'Public PAdES API',
+                signatureReason: 'Assinatura digital de teste',
+                signatureLocation: 'Ambiente de testes',
+                signatureContactInfo: 'test@example.com',
+                appendSignaturePage: true
+            )
+        );
+
+        $this->assertFileExists($output);
+
+        $content = file_get_contents($output);
+
+        $this->assertNotFalse($content);
+        $this->assertStringContainsString('/Type /Sig', $content);
+        $this->assertStringContainsString('/ByteRange [0 ', $content);
     }
 
     public function test_it_signs_pdf_using_public_pades_signer_api(): void
@@ -71,5 +117,21 @@ final class PadesTest extends TestCase
         $this->assertStringContainsString('/Type /Sig', $content);
         $this->assertStringContainsString('/Name (Public PAdES API)', $content);
         $this->assertStringContainsString('/ByteRange [0 ', $content);
+    }
+
+    public function test_static_api_requires_signature_metadata(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        Pades::sign(
+            inputPdf: __DIR__ . '/Fixtures/sample.pdf',
+            outputPdf: __DIR__ . '/Output/pades-missing-metadata.pdf',
+            certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
+            certificatePassword: '123456',
+            options: new PadesSignatureOptions(
+                signatureName: 'Public PAdES API',
+                signatureReason: 'Assinatura digital de teste'
+            )
+        );
     }
 }
