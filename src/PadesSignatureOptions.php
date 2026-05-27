@@ -43,6 +43,7 @@ final readonly class PadesSignatureOptions
         public string $hashAlgorithm = SignatureAlgorithmPolicy::HASH_SHA256,
         public string $signatureAlgorithm = SignatureAlgorithmPolicy::SIGNATURE_RSA,
         public string $minimumHashAlgorithm = SignatureAlgorithmPolicy::HASH_SHA256,
+        public ?int $maxInputPdfBytes = null,
         public bool $includeSigningTime = false,
         public bool $appendSignaturePage = false,
         public array $signaturePageMediaBox = [0, 0, 595, 842],

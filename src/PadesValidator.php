@@ -9,6 +9,7 @@ use NihilLabs\Pades\Exception\InvalidPadesArgumentException;
 use NihilLabs\Pades\Exception\PadesException;
 use NihilLabs\Pades\Exception\PdfReadException;
 use NihilLabs\Pades\Exception\ValidationException;
+use NihilLabs\Pades\Pdf\PdfFileGuard;
 use NihilLabs\Pades\Validation\PadesBbValidator;
 use NihilLabs\Pades\Validation\PadesBtValidator;
 use NihilLabs\Pades\Validation\PadesLtValidator;
@@ -21,7 +22,9 @@ final readonly class PadesValidator
         private PadesBbValidator $bbValidator = new PadesBbValidator(),
         private PadesBtValidator $btValidator = new PadesBtValidator(),
         private PadesLtValidator $ltValidator = new PadesLtValidator(),
-        private PadesLtaValidator $ltaValidator = new PadesLtaValidator()
+        private PadesLtaValidator $ltaValidator = new PadesLtaValidator(),
+        private ?int $maxPdfBytes = null,
+        private PdfFileGuard $fileGuard = new PdfFileGuard()
     ) {}
 
     public static function withTsaTrustStore(PadesTrustStore $tsaTrustStore): self
@@ -50,17 +53,14 @@ final readonly class PadesValidator
         );
     }
 
+    public static function withMaxPdfBytes(int $maxPdfBytes): self
+    {
+        return new self(maxPdfBytes: $maxPdfBytes);
+    }
+
     public function validateFile(string $pdfPath): PadesValidationResult
     {
-        if (! is_file($pdfPath) || ! is_readable($pdfPath)) {
-            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$pdfPath}");
-        }
-
-        $pdfContent = file_get_contents($pdfPath);
-
-        if ($pdfContent === false) {
-            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$pdfPath}");
-        }
+        $pdfContent = $this->fileGuard->read($pdfPath, $this->maxPdfBytes);
 
         return $this->validate($pdfContent);
     }
@@ -84,15 +84,7 @@ final readonly class PadesValidator
 
     public function validateProfileFile(string $pdfPath, string $profile): PadesValidationResult
     {
-        if (! is_file($pdfPath) || ! is_readable($pdfPath)) {
-            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$pdfPath}");
-        }
-
-        $pdfContent = file_get_contents($pdfPath);
-
-        if ($pdfContent === false) {
-            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$pdfPath}");
-        }
+        $pdfContent = $this->fileGuard->read($pdfPath, $this->maxPdfBytes);
 
         return $this->validateProfile($pdfContent, $profile);
     }
@@ -116,15 +108,7 @@ final readonly class PadesValidator
      */
     public function validateAllFile(string $pdfPath): array
     {
-        if (! is_file($pdfPath) || ! is_readable($pdfPath)) {
-            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$pdfPath}");
-        }
-
-        $pdfContent = file_get_contents($pdfPath);
-
-        if ($pdfContent === false) {
-            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$pdfPath}");
-        }
+        $pdfContent = $this->fileGuard->read($pdfPath, $this->maxPdfBytes);
 
         return $this->validateAll($pdfContent);
     }

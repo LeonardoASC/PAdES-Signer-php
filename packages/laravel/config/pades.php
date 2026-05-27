@@ -32,6 +32,9 @@ return [
         'hash_algorithm' => 'sha256',
         'signature_algorithm' => 'rsa',
         'minimum_hash_algorithm' => 'sha256',
+        'max_input_pdf_bytes' => env('PADES_MAX_INPUT_PDF_BYTES') === null
+            ? null
+            : (int) env('PADES_MAX_INPUT_PDF_BYTES'),
         'include_signing_time' => false,
         'page_media_box' => [0, 0, 595, 842],
         'page_rect' => [48, 120, 547, 700],

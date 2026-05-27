@@ -9,9 +9,9 @@ use NihilLabs\Pades\Crypto\Validation\LtvValidationMaterial;
 use NihilLabs\Pades\Crypto\Validation\RealLtvValidationMaterialFactory;
 use NihilLabs\Pades\Crypto\X509\OpenSslCertificateChainValidator;
 use NihilLabs\Pades\Exception\LtvException;
-use NihilLabs\Pades\Exception\PdfReadException;
 use NihilLabs\Pades\Exception\PdfWriteException;
 use NihilLabs\Pades\Exception\TrustStoreException;
+use NihilLabs\Pades\Pdf\PdfFileGuard;
 use NihilLabs\Pades\Pdf\PdfLtaEnricher;
 use NihilLabs\Pades\Pdf\PdfLtvEnricher;
 use NihilLabs\Pades\Timestamp\TimestampProviderInterface;
@@ -22,7 +22,9 @@ final readonly class PadesLtvEnricher
     public function __construct(
         private PdfLtvEnricher $ltEnricher = new PdfLtvEnricher(),
         private PdfLtaEnricher $ltaEnricher = new PdfLtaEnricher(),
-        private RealLtvValidationMaterialFactory $materialFactory = new RealLtvValidationMaterialFactory()
+        private RealLtvValidationMaterialFactory $materialFactory = new RealLtvValidationMaterialFactory(),
+        private ?int $maxPdfBytes = null,
+        private PdfFileGuard $fileGuard = new PdfFileGuard()
     ) {}
 
     public function addLt(
@@ -154,17 +156,7 @@ final readonly class PadesLtvEnricher
 
     private function read(string $inputPdf): string
     {
-        if (! is_file($inputPdf) || ! is_readable($inputPdf)) {
-            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$inputPdf}");
-        }
-
-        $pdf = file_get_contents($inputPdf);
-
-        if ($pdf === false) {
-            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$inputPdf}");
-        }
-
-        return $pdf;
+        return $this->fileGuard->read($inputPdf, $this->maxPdfBytes);
     }
 
     private function write(string $outputPdf, string $content): void

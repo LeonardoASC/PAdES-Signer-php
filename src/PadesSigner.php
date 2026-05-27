@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use NihilLabs\Pades\Exception\PdfReadException;
 use NihilLabs\Pades\Exception\SigningException;
 use NihilLabs\Pades\Exception\TrustStoreException;
+use NihilLabs\Pades\Pdf\PdfFileGuard;
 use NihilLabs\Pades\Pdf\RealPdfSigner;
 use NihilLabs\Pades\Signing\SignatureCredentialInterface;
 use RuntimeException;
@@ -16,7 +17,8 @@ use RuntimeException;
 final readonly class PadesSigner
 {
     public function __construct(
-        private RealPdfSigner $pdfSigner = new RealPdfSigner()
+        private RealPdfSigner $pdfSigner = new RealPdfSigner(),
+        private PdfFileGuard $fileGuard = new PdfFileGuard()
     ) {}
 
     public function sign(
@@ -26,6 +28,7 @@ final readonly class PadesSigner
         ?PadesSignatureOptions $options = null
     ): PadesSignatureResult {
         $options ??= new PadesSignatureOptions();
+        $this->fileGuard->assertReadable($inputPdf, $options->maxInputPdfBytes);
 
         if ($credential !== null && $options->trustValidator !== null) {
             $trust = $options->trustValidator->validateCredential($credential);
@@ -57,6 +60,7 @@ final readonly class PadesSigner
                 lockedFieldNames: $options->lockedFieldNames,
                 fieldLockAction: $options->fieldLockAction,
                 algorithmPolicy: $options->algorithmPolicy(),
+                maxInputPdfBytes: $options->maxInputPdfBytes,
                 includeSigningTime: $options->includeSigningTime,
                 appendSignaturePage: $options->appendSignaturePage,
                 signaturePageMediaBox: $options->signaturePageMediaBox,

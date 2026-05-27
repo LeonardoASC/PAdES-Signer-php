@@ -39,6 +39,7 @@ final readonly class RealPdfSigner
         array $lockedFieldNames = [],
         string $fieldLockAction = 'Include',
         ?SignatureAlgorithmPolicy $algorithmPolicy = null,
+        ?int $maxInputPdfBytes = null,
         bool $includeSigningTime = false,
         bool $appendSignaturePage = false,
         array $signaturePageMediaBox = [0, 0, 595, 842],
@@ -48,9 +49,9 @@ final readonly class RealPdfSigner
             throw new InvalidArgumentException("PDF de entrada não encontrado: {$inputPdf}");
         }
 
-        $content = file_get_contents($inputPdf);
+        $content = (new PdfFileGuard())->read($inputPdf, $maxInputPdfBytes);
 
-        if ($content === false || ! str_starts_with($content, '%PDF-')) {
+        if (! str_starts_with($content, '%PDF-')) {
             throw new InvalidArgumentException('Arquivo de entrada não é um PDF válido.');
         }
 

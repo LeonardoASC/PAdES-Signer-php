@@ -63,6 +63,7 @@ Configure `config/pades.php` ou variaveis:
 - `PADES_TSA_TIMEOUT`
 - `PADES_TRUST_STORE_ENABLED`
 - `PADES_TRUST_STORE_DIR`
+- `PADES_MAX_INPUT_PDF_BYTES`
 
 A senha do PFX nao deve ficar no config. Informe a senha no momento da
 assinatura, vinda de input temporario, sessao segura ou vault.

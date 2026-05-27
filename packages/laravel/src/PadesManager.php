@@ -92,6 +92,7 @@ final readonly class PadesManager
             hashAlgorithm: (string) ($overrides['hashAlgorithm'] ?? $this->configString('pades.signature.hash_algorithm', 'sha256')),
             signatureAlgorithm: (string) ($overrides['signatureAlgorithm'] ?? $this->configString('pades.signature.signature_algorithm', 'rsa')),
             minimumHashAlgorithm: (string) ($overrides['minimumHashAlgorithm'] ?? $this->configString('pades.signature.minimum_hash_algorithm', 'sha256')),
+            maxInputPdfBytes: $this->nullableInt($overrides['maxInputPdfBytes'] ?? $this->config->get('pades.signature.max_input_pdf_bytes')),
             includeSigningTime: (bool) ($overrides['includeSigningTime'] ?? $this->configBool('pades.signature.include_signing_time', false)),
             appendSignaturePage: (bool) ($overrides['appendSignaturePage'] ?? $this->configBool('pades.signature.append_signature_page', true)),
             signaturePageMediaBox: $this->arrayConfigOrOverride($overrides, 'signaturePageMediaBox', 'pades.signature.page_media_box', [0, 0, 595, 842]),
@@ -224,5 +225,10 @@ final readonly class PadesManager
     private function nullableString(mixed $value): ?string
     {
         return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    private function nullableInt(mixed $value): ?int
+    {
+        return is_numeric($value) ? (int) $value : null;
     }
 }
