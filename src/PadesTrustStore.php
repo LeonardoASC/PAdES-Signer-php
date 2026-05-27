@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades;
 
-use InvalidArgumentException;
 use NihilLabs\Pades\Crypto\X509\InMemoryTrustStore;
 use NihilLabs\Pades\Crypto\X509\TrustStoreCredentialValidator;
 use NihilLabs\Pades\Crypto\X509\TrustStoreInterface;
+use NihilLabs\Pades\Exception\TrustStoreException;
 use NihilLabs\Pades\Validation\TrustValidatorInterface;
 
 final readonly class PadesTrustStore implements TrustStoreInterface
@@ -42,10 +42,14 @@ final readonly class PadesTrustStore implements TrustStoreInterface
 
     public static function fromFile(string $path): self
     {
+        if (! is_file($path) || ! is_readable($path)) {
+            throw new TrustStoreException("Certificado confiavel nao encontrado ou ilegivel: {$path}");
+        }
+
         $content = file_get_contents($path);
 
         if ($content === false) {
-            throw new InvalidArgumentException("Certificado confiavel nao encontrado ou ilegivel: {$path}");
+            throw new TrustStoreException("Certificado confiavel nao encontrado ou ilegivel: {$path}");
         }
 
         return new self([$content]);
@@ -59,10 +63,14 @@ final readonly class PadesTrustStore implements TrustStoreInterface
         $certificates = [];
 
         foreach ($paths as $path) {
+            if (! is_file($path) || ! is_readable($path)) {
+                throw new TrustStoreException("Certificado confiavel nao encontrado ou ilegivel: {$path}");
+            }
+
             $content = file_get_contents($path);
 
             if ($content === false) {
-                throw new InvalidArgumentException("Certificado confiavel nao encontrado ou ilegivel: {$path}");
+                throw new TrustStoreException("Certificado confiavel nao encontrado ou ilegivel: {$path}");
             }
 
             $certificates[] = $content;
@@ -76,7 +84,7 @@ final readonly class PadesTrustStore implements TrustStoreInterface
         $entries = scandir($directory);
 
         if ($entries === false) {
-            throw new InvalidArgumentException("Diretorio de trust store nao encontrado ou ilegivel: {$directory}");
+            throw new TrustStoreException("Diretorio de trust store nao encontrado ou ilegivel: {$directory}");
         }
 
         $certificates = [];
@@ -91,7 +99,7 @@ final readonly class PadesTrustStore implements TrustStoreInterface
             $content = file_get_contents($path);
 
             if ($content === false) {
-                throw new InvalidArgumentException("Certificado confiavel nao encontrado ou ilegivel: {$path}");
+                throw new TrustStoreException("Certificado confiavel nao encontrado ou ilegivel: {$path}");
             }
 
             $certificates[] = $content;

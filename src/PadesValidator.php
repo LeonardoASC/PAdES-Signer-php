@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades;
 
-use InvalidArgumentException;
 use NihilLabs\Pades\Crypto\Timestamp\Rfc3161TimestampValidationPolicy;
+use NihilLabs\Pades\Exception\InvalidPadesArgumentException;
+use NihilLabs\Pades\Exception\PadesException;
+use NihilLabs\Pades\Exception\PdfReadException;
+use NihilLabs\Pades\Exception\ValidationException;
 use NihilLabs\Pades\Validation\PadesBbValidator;
 use NihilLabs\Pades\Validation\PadesBtValidator;
 use NihilLabs\Pades\Validation\PadesLtValidator;
@@ -49,10 +52,14 @@ final readonly class PadesValidator
 
     public function validateFile(string $pdfPath): PadesValidationResult
     {
+        if (! is_file($pdfPath) || ! is_readable($pdfPath)) {
+            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$pdfPath}");
+        }
+
         $pdfContent = file_get_contents($pdfPath);
 
         if ($pdfContent === false) {
-            throw new InvalidArgumentException("PDF nao encontrado ou ilegivel: {$pdfPath}");
+            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$pdfPath}");
         }
 
         return $this->validate($pdfContent);
@@ -60,18 +67,31 @@ final readonly class PadesValidator
 
     public function validate(string $pdfContent): PadesValidationResult
     {
-        $results = $this->validateAllInternal($pdfContent);
-        $best = $this->bestResult($results);
+        try {
+            $results = $this->validateAllInternal($pdfContent);
+            $best = $this->bestResult($results);
+        } catch (PadesException $exception) {
+            throw $exception;
+        } catch (\RuntimeException $exception) {
+            throw new ValidationException(
+                'Falha ao validar PDF PAdES: ' . $exception->getMessage(),
+                previous: $exception
+            );
+        }
 
         return $this->publicResult($best, $results);
     }
 
     public function validateProfileFile(string $pdfPath, string $profile): PadesValidationResult
     {
+        if (! is_file($pdfPath) || ! is_readable($pdfPath)) {
+            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$pdfPath}");
+        }
+
         $pdfContent = file_get_contents($pdfPath);
 
         if ($pdfContent === false) {
-            throw new InvalidArgumentException("PDF nao encontrado ou ilegivel: {$pdfPath}");
+            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$pdfPath}");
         }
 
         return $this->validateProfile($pdfContent, $profile);
@@ -79,7 +99,16 @@ final readonly class PadesValidator
 
     public function validateProfile(string $pdfContent, string $profile): PadesValidationResult
     {
-        return $this->publicResult($this->validateInternalProfile($pdfContent, $profile));
+        try {
+            return $this->publicResult($this->validateInternalProfile($pdfContent, $profile));
+        } catch (PadesException $exception) {
+            throw $exception;
+        } catch (\RuntimeException $exception) {
+            throw new ValidationException(
+                "Falha ao validar perfil {$profile}: " . $exception->getMessage(),
+                previous: $exception
+            );
+        }
     }
 
     /**
@@ -87,10 +116,14 @@ final readonly class PadesValidator
      */
     public function validateAllFile(string $pdfPath): array
     {
+        if (! is_file($pdfPath) || ! is_readable($pdfPath)) {
+            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$pdfPath}");
+        }
+
         $pdfContent = file_get_contents($pdfPath);
 
         if ($pdfContent === false) {
-            throw new InvalidArgumentException("PDF nao encontrado ou ilegivel: {$pdfPath}");
+            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$pdfPath}");
         }
 
         return $this->validateAll($pdfContent);
@@ -150,7 +183,7 @@ final readonly class PadesValidator
             PadesProfile::B_T => $this->btValidator->validatePdf($pdfContent),
             PadesProfile::B_LT => $this->ltValidator->validatePdf($pdfContent),
             PadesProfile::B_LTA => $this->ltaValidator->validatePdf($pdfContent),
-            default => throw new InvalidArgumentException("Perfil PAdES invalido: {$profile}"),
+            default => throw new InvalidPadesArgumentException("Perfil PAdES invalido: {$profile}"),
         };
     }
 

@@ -1,0 +1,29 @@
+{
+    "name": "nihillabs/pades-laravel",
+    "description": "Optional Laravel integration for nihillabs/pades-core",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "NihilLabs\\Pades\\Laravel\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.4",
+        "illuminate/contracts": "^11.0|^12.0",
+        "illuminate/support": "^11.0|^12.0",
+        "nihillabs/pades-core": "^0.1"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "NihilLabs\\Pades\\Laravel\\PadesServiceProvider"
+            ],
+            "aliases": {
+                "Pades": "NihilLabs\\Pades\\Laravel\\Facades\\Pades"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -6,6 +6,6 @@ namespace NihilLabs\Pades\Exception;
 
 use RuntimeException;
 
-class CertificateException extends RuntimeException implements PadesException
+class PdfException extends RuntimeException implements PadesException
 {
 }

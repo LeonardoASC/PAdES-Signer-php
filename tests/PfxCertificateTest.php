@@ -15,7 +15,7 @@ final class PfxCertificateTest extends TestCase
     {
         $certificate = new PfxCertificate(
             path: __DIR__ . '/Fixtures/certificate.pfx',
-            password: '123456'
+            password: $this->certificatePassword()
         );
 
         $this->assertNotNull(
@@ -26,7 +26,7 @@ final class PfxCertificateTest extends TestCase
     {
         $certificate = new PfxCertificate(
             path: __DIR__ . '/Fixtures/certificate.pfx',
-            password: '123456'
+            password: $this->certificatePassword()
         );
 
         $serial = $certificate->getSerialNumberHex();
@@ -47,7 +47,7 @@ final class PfxCertificateTest extends TestCase
 
         $certificate = PfxCertificate::fromContents(
             contents: $contents,
-            password: '123456'
+            password: $this->certificatePassword()
         );
 
         $this->assertNotNull($certificate->getCommonName());
@@ -62,7 +62,7 @@ final class PfxCertificateTest extends TestCase
 
         $metadata = (new PfxCertificateImporter())->inspectContents(
             contents: $contents,
-            password: '123456'
+            password: $this->certificatePassword()
         );
 
         $this->assertNotEmpty($metadata->serialNumberHex);
@@ -80,10 +80,21 @@ final class PfxCertificateTest extends TestCase
 
         $credential = PfxSignatureCredential::fromContents(
             contents: $contents,
-            password: '123456'
+            password: $this->certificatePassword()
         );
 
         $this->assertNotEmpty($credential->getCertificatePem());
         $this->assertNotEmpty($credential->getCertificateChainPem());
+    }
+
+    private function certificatePassword(): string
+    {
+        $password = getenv('PADES_INTEROP_PFX_PASSWORD');
+
+        if (! is_string($password) || $password === '') {
+            $this->markTestSkipped('Configure PADES_INTEROP_PFX_PASSWORD para rodar testes com certificate.pfx local.');
+        }
+
+        return $password;
     }
 }

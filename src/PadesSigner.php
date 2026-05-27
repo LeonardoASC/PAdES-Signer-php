@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace NihilLabs\Pades;
 
 use DateTimeImmutable;
+use InvalidArgumentException;
+use NihilLabs\Pades\Exception\PdfReadException;
+use NihilLabs\Pades\Exception\SigningException;
+use NihilLabs\Pades\Exception\TrustStoreException;
 use NihilLabs\Pades\Pdf\RealPdfSigner;
 use NihilLabs\Pades\Signing\SignatureCredentialInterface;
 use RuntimeException;
@@ -27,47 +31,56 @@ final readonly class PadesSigner
             $trust = $options->trustValidator->validateCredential($credential);
 
             if (! $trust->trusted) {
-                throw new RuntimeException(
+                throw new TrustStoreException(
                     $trust->messages[0] ?? 'A credencial de assinatura nao e confiavel.'
                 );
             }
         }
 
-        $this->pdfSigner->sign(
-            inputPdf: $inputPdf,
-            outputPdf: $outputPdf,
-            timestampClient: $options->timestampProvider,
-            visibleSignature: $options->visibleSignature,
-            signatureRect: $options->signatureRect,
-            signatureFlags: $options->signatureFlags,
-            signatureName: $options->signatureName,
-            signatureReason: $options->signatureReason,
-            signatureLocation: $options->signatureLocation,
-            signatureContactInfo: $options->signatureContactInfo,
-            signatureCredential: $credential,
-            signerProvider: $options->signerProvider,
-            signatureFieldName: $options->signatureFieldName,
-            signatureType: $options->signatureType,
-            certificationPermission: $options->certificationPermission,
-            lockedFieldNames: $options->lockedFieldNames,
-            fieldLockAction: $options->fieldLockAction,
-            algorithmPolicy: $options->algorithmPolicy(),
-            includeSigningTime: $options->includeSigningTime,
-            appendSignaturePage: $options->appendSignaturePage,
-            signaturePageMediaBox: $options->signaturePageMediaBox,
-            signaturePageRect: $options->signaturePageRect
-        );
+        try {
+            $this->pdfSigner->sign(
+                inputPdf: $inputPdf,
+                outputPdf: $outputPdf,
+                timestampClient: $options->timestampProvider,
+                visibleSignature: $options->visibleSignature,
+                signatureRect: $options->signatureRect,
+                signatureFlags: $options->signatureFlags,
+                signatureName: $options->signatureName,
+                signatureReason: $options->signatureReason,
+                signatureLocation: $options->signatureLocation,
+                signatureContactInfo: $options->signatureContactInfo,
+                signatureCredential: $credential,
+                signerProvider: $options->signerProvider,
+                signatureFieldName: $options->signatureFieldName,
+                signatureType: $options->signatureType,
+                certificationPermission: $options->certificationPermission,
+                lockedFieldNames: $options->lockedFieldNames,
+                fieldLockAction: $options->fieldLockAction,
+                algorithmPolicy: $options->algorithmPolicy(),
+                includeSigningTime: $options->includeSigningTime,
+                appendSignaturePage: $options->appendSignaturePage,
+                signaturePageMediaBox: $options->signaturePageMediaBox,
+                signaturePageRect: $options->signaturePageRect
+            );
+        } catch (InvalidArgumentException $exception) {
+            throw new SigningException($exception->getMessage(), previous: $exception);
+        } catch (RuntimeException $exception) {
+            throw new SigningException(
+                'Falha ao assinar o PDF: ' . $exception->getMessage(),
+                previous: $exception
+            );
+        }
 
         $sha256 = hash_file('sha256', $outputPdf);
 
         if ($sha256 === false) {
-            throw new RuntimeException("PDF assinado nao pode ser lido apos a escrita: {$outputPdf}");
+            throw new PdfReadException("PDF assinado nao pode ser lido apos a escrita: {$outputPdf}");
         }
 
         $size = filesize($outputPdf);
 
         if ($size === false) {
-            throw new RuntimeException("Tamanho do PDF assinado nao pode ser obtido: {$outputPdf}");
+            throw new PdfReadException("Tamanho do PDF assinado nao pode ser obtido: {$outputPdf}");
         }
 
         return new PadesSignatureResult(

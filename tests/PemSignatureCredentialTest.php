@@ -18,7 +18,7 @@ final class PemSignatureCredentialTest extends TestCase
 
         $certificates = [];
         $this->assertTrue(
-            openssl_pkcs12_read($content, $certificates, '123456')
+            openssl_pkcs12_read($content, $certificates, $this->certificatePassword())
         );
         $this->assertIsString($certificates['cert']);
         $this->assertIsString($certificates['pkey']);
@@ -49,7 +49,7 @@ final class PemSignatureCredentialTest extends TestCase
     {
         $pfx = new PfxCertificate(
             path: __DIR__ . '/Fixtures/certificate.pfx',
-            password: '123456'
+            password: $this->certificatePassword()
         );
 
         $credential = new PemSignatureCredential(
@@ -61,5 +61,16 @@ final class PemSignatureCredentialTest extends TestCase
         $chain = $credential->getCertificateChainPem();
 
         $this->assertSame($credential->getCertificatePem(), $chain[0]);
+    }
+
+    private function certificatePassword(): string
+    {
+        $password = getenv('PADES_INTEROP_PFX_PASSWORD');
+
+        if (! is_string($password) || $password === '') {
+            $this->markTestSkipped('Configure PADES_INTEROP_PFX_PASSWORD para rodar testes com certificate.pfx local.');
+        }
+
+        return $password;
     }
 }

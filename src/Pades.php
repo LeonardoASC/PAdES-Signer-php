@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace NihilLabs\Pades;
 
-use InvalidArgumentException;
+use NihilLabs\Pades\Exception\CertificateException;
+use NihilLabs\Pades\Exception\InvalidPadesArgumentException;
 use NihilLabs\Pades\Signing\PfxSignatureCredential;
+use RuntimeException;
 
 final readonly class Pades
 {
@@ -18,13 +20,22 @@ final readonly class Pades
     ): PadesSignatureResult {
         self::assertRequiredSignatureMetadata($options);
 
+        try {
+            $credential = new PfxSignatureCredential(
+                pathOrCertificate: $certificatePath,
+                password: $certificatePassword
+            );
+        } catch (RuntimeException $exception) {
+            throw new CertificateException(
+                'Nao foi possivel carregar o certificado PFX/P12.',
+                previous: $exception
+            );
+        }
+
         return (new PadesSigner())->sign(
             inputPdf: $inputPdf,
             outputPdf: $outputPdf,
-            credential: new PfxSignatureCredential(
-                pathOrCertificate: $certificatePath,
-                password: $certificatePassword
-            ),
+            credential: $credential,
             options: $options
         );
     }
@@ -38,13 +49,22 @@ final readonly class Pades
     ): PadesSignatureResult {
         self::assertRequiredSignatureMetadata($options);
 
+        try {
+            $credential = PfxSignatureCredential::fromContents(
+                contents: $certificateContents,
+                password: $certificatePassword
+            );
+        } catch (RuntimeException $exception) {
+            throw new CertificateException(
+                'Nao foi possivel carregar o certificado PFX/P12 em memoria.',
+                previous: $exception
+            );
+        }
+
         return (new PadesSigner())->sign(
             inputPdf: $inputPdf,
             outputPdf: $outputPdf,
-            credential: PfxSignatureCredential::fromContents(
-                contents: $certificateContents,
-                password: $certificatePassword
-            ),
+            credential: $credential,
             options: $options
         );
     }
@@ -60,7 +80,7 @@ final readonly class Pades
 
         foreach ($required as $field => $value) {
             if (! is_string($value) || trim($value) === '') {
-                throw new InvalidArgumentException(
+                throw new InvalidPadesArgumentException(
                     "Informe {$field} em PadesSignatureOptions."
                 );
             }

@@ -42,6 +42,9 @@ The current implementation includes:
 composer require nihillabs/pades-core
 ```
 
+Optional Laravel integration lives in `packages/laravel` and can be installed
+as `nihillabs/pades-laravel` when published. See `docs/LARAVEL-INTEGRACAO.md`.
+
 ---
 
 ## Requirements

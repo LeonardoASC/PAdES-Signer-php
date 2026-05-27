@@ -8,6 +8,10 @@ use InvalidArgumentException;
 use NihilLabs\Pades\Crypto\Validation\LtvValidationMaterial;
 use NihilLabs\Pades\Crypto\Validation\RealLtvValidationMaterialFactory;
 use NihilLabs\Pades\Crypto\X509\OpenSslCertificateChainValidator;
+use NihilLabs\Pades\Exception\LtvException;
+use NihilLabs\Pades\Exception\PdfReadException;
+use NihilLabs\Pades\Exception\PdfWriteException;
+use NihilLabs\Pades\Exception\TrustStoreException;
 use NihilLabs\Pades\Pdf\PdfLtaEnricher;
 use NihilLabs\Pades\Pdf\PdfLtvEnricher;
 use NihilLabs\Pades\Timestamp\TimestampProviderInterface;
@@ -25,10 +29,17 @@ final readonly class PadesLtvEnricher
         string $signedPdfContent,
         LtvValidationMaterial $material
     ): string {
-        return $this->ltEnricher->enrich(
-            signedPdfContent: $signedPdfContent,
-            material: $material
-        );
+        try {
+            return $this->ltEnricher->enrich(
+                signedPdfContent: $signedPdfContent,
+                material: $material
+            );
+        } catch (InvalidArgumentException | RuntimeException $exception) {
+            throw new LtvException(
+                'Falha ao adicionar material LT ao PDF: ' . $exception->getMessage(),
+                previous: $exception
+            );
+        }
     }
 
     /**
@@ -51,7 +62,7 @@ final readonly class PadesLtvEnricher
                 );
 
             if (! $chain->trusted) {
-                throw new RuntimeException(
+                throw new TrustStoreException(
                     $chain->messages[0] ?? 'Cadeia X.509 nao ancora na trust store configurada.'
                 );
             }
@@ -76,11 +87,18 @@ final readonly class PadesLtvEnricher
         TimestampProviderInterface $timestampProvider,
         ?string $fieldName = null
     ): string {
-        return $this->ltaEnricher->addArchiveTimestamp(
-            ltPdfContent: $ltPdfContent,
-            timestampProvider: $timestampProvider,
-            fieldName: $fieldName
-        );
+        try {
+            return $this->ltaEnricher->addArchiveTimestamp(
+                ltPdfContent: $ltPdfContent,
+                timestampProvider: $timestampProvider,
+                fieldName: $fieldName
+            );
+        } catch (InvalidArgumentException | RuntimeException $exception) {
+            throw new LtvException(
+                'Falha ao adicionar DocTimeStamp LTA ao PDF: ' . $exception->getMessage(),
+                previous: $exception
+            );
+        }
     }
 
     public function addLtFile(
@@ -136,10 +154,14 @@ final readonly class PadesLtvEnricher
 
     private function read(string $inputPdf): string
     {
+        if (! is_file($inputPdf) || ! is_readable($inputPdf)) {
+            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$inputPdf}");
+        }
+
         $pdf = file_get_contents($inputPdf);
 
         if ($pdf === false) {
-            throw new InvalidArgumentException("PDF nao encontrado ou ilegivel: {$inputPdf}");
+            throw new PdfReadException("PDF nao encontrado ou ilegivel: {$inputPdf}");
         }
 
         return $pdf;
@@ -148,7 +170,7 @@ final readonly class PadesLtvEnricher
     private function write(string $outputPdf, string $content): void
     {
         if (file_put_contents($outputPdf, $content) === false) {
-            throw new RuntimeException("Nao foi possivel escrever PDF: {$outputPdf}");
+            throw new PdfWriteException("Nao foi possivel escrever PDF: {$outputPdf}");
         }
     }
 }

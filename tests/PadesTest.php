@@ -27,7 +27,7 @@ final class PadesTest extends TestCase
             inputPdf: $input,
             outputPdf: $output,
             certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
-            certificatePassword: '123456',
+            certificatePassword: $this->certificatePassword(),
             options: new PadesSignatureOptions(
                 visibleSignature: true,
                 signatureName: 'Public PAdES API',
@@ -71,7 +71,7 @@ final class PadesTest extends TestCase
             inputPdf: $input,
             outputPdf: $output,
             certificateContents: $contents,
-            certificatePassword: '123456',
+            certificatePassword: $this->certificatePassword(),
             options: new PadesSignatureOptions(
                 visibleSignature: true,
                 signatureName: 'Public PAdES API',
@@ -99,7 +99,7 @@ final class PadesTest extends TestCase
 
         $credential = new PfxSignatureCredential(
             pathOrCertificate: __DIR__ . '/Fixtures/certificate.pfx',
-            password: '123456'
+            password: $this->certificatePassword()
         );
 
         (new PadesSigner())->sign(
@@ -127,11 +127,22 @@ final class PadesTest extends TestCase
             inputPdf: __DIR__ . '/Fixtures/sample.pdf',
             outputPdf: __DIR__ . '/Output/pades-missing-metadata.pdf',
             certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
-            certificatePassword: '123456',
+            certificatePassword: 'unused-before-metadata-validation',
             options: new PadesSignatureOptions(
                 signatureName: 'Public PAdES API',
                 signatureReason: 'Assinatura digital de teste'
             )
         );
+    }
+
+    private function certificatePassword(): string
+    {
+        $password = getenv('PADES_INTEROP_PFX_PASSWORD');
+
+        if (! is_string($password) || $password === '') {
+            $this->markTestSkipped('Configure PADES_INTEROP_PFX_PASSWORD para rodar testes com certificate.pfx local.');
+        }
+
+        return $password;
     }
 }
