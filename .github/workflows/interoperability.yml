@@ -1,0 +1,78 @@
+name: Interoperability
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_external_validators:
+        description: Run pyHanko/DSS/ETSI commands configured by repository secrets
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  interoperability-fixtures:
+    name: Generate interoperability fixtures
+    runs-on: ubuntu-latest
+
+    env:
+      PADES_INTEROP_PFX_PASSWORD: ${{ secrets.PADES_INTEROP_PFX_PASSWORD }}
+      PADES_INTEROP_TSA_URL: ${{ secrets.PADES_INTEROP_TSA_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: curl, openssl, zlib
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Generate external-validator fixtures
+        run: vendor/bin/phpunit tests/InteroperabilityExternalValidatorsTest.php --filter test_it_generates_pdf_fixtures_for_external_interoperability_validators --display-skipped
+
+      - name: Upload interoperability PDFs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pades-interoperability-fixtures
+          path: tests/Output/interoperability
+          if-no-files-found: ignore
+
+  external-validators:
+    name: External validators
+    runs-on: ubuntu-latest
+    if: ${{ inputs.run_external_validators == 'true' }}
+
+    env:
+      PADES_INTEROP_PFX_PASSWORD: ${{ secrets.PADES_INTEROP_PFX_PASSWORD }}
+      PADES_INTEROP_TSA_URL: ${{ secrets.PADES_INTEROP_TSA_URL }}
+      PYHANKO_VALIDATE_COMMAND: ${{ secrets.PYHANKO_VALIDATE_COMMAND }}
+      DSS_VALIDATE_COMMAND: ${{ secrets.DSS_VALIDATE_COMMAND }}
+      ETSI_VALIDATE_COMMAND: ${{ secrets.ETSI_VALIDATE_COMMAND }}
+      PYHANKO_SIGNED_PDF: ${{ secrets.PYHANKO_SIGNED_PDF }}
+      INTERNATIONAL_PADES_FIXTURE: ${{ secrets.INTERNATIONAL_PADES_FIXTURE }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: curl, openssl, zlib
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run interoperability tests
+        run: vendor/bin/phpunit tests/InteroperabilityExternalValidatorsTest.php --display-skipped

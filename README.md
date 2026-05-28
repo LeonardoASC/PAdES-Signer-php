@@ -2,20 +2,26 @@
 
 PAdES Core is a native PHP library for generating and validating PAdES-compatible PDF digital signatures.
 
-> Experimental project focused on low-level PDF digital signature infrastructure in PHP.
+It exposes a public PAdES-first API for signing, validating, enriching LTV/LTA
+material and producing operational reports, while keeping PDF/CMS/ASN.1 internals
+as implementation details.
 
 ## Features
 
 - Internal CMS generation for PAdES PDF signatures
 - Public PAdES-first signing API
+- Public validation API for B-B, B-T, B-LT and B-LTA
+- Optional LTV/LTA enrichment helpers
+- Configurable trust store
+- Optional Laravel integration package
 - SigningCertificateV2 support
 - Incremental PDF updates
 - PDF signature dictionary generation
 - ByteRange calculation and validation
 - AcroForm and Widget generation
 - OpenSSL verification compatibility
-- PAdES-B-B experimental support
-- PAdES PDF signature extraction utilities
+- Visible and invisible signatures
+- Dedicated final signature page
 
 ---
 
@@ -26,6 +32,10 @@ The current implementation includes:
 - Incremental PDF signing
 - Detached CMS signatures generated internally for PAdES
 - SigningCertificateV2 attribute
+- PAdES-B-B and PAdES-B-T signing
+- PAdES-B-LT and PAdES-B-LTA enrichment primitives
+- Public validation result objects and reports
+- Public error hierarchy
 - IssuerAndSerialNumber generation
 - DER ASN.1 encoder
 - Structural PDF signature validation
@@ -33,6 +43,7 @@ The current implementation includes:
 - OpenSSL-compatible CMS verification
 - Configurable visible signature widgets
 - Basic PDF appearance stream generation
+- CI-safe test suite and manual interoperability workflow
 
 ---
 
@@ -138,41 +149,57 @@ use NihilLabs\Pades\Signing\PfxSignatureCredential;
 vendor/bin/phpunit
 ```
 
+CI-safe suite without local certificate secrets:
+
+```bash
+vendor/bin/phpunit -c phpunit.ci.xml --display-skipped --display-warnings
+```
+
+Interoperability setup is documented in `docs/CI-INTEROPERABILIDADE.md`.
+
 ---
 
 ## Current Status
 
-This project is currently experimental but already supports:
+Recommended first production target:
 
-- Verifiable CMS signatures
-- Advanced signed attributes
-- SigningCertificateV2
-- OpenSSL CMS verification
-- PAdES-B-B oriented structure
+- PAdES-B-B for the main signing flow.
+- PAdES-B-T when a real RFC 3161 TSA is configured.
 
-Adobe Acrobat recognizes generated signatures as digital signatures.
+Functional but environment-sensitive:
+
+- PAdES-B-LT depends on real OCSP/CRL evidence and a usable certificate chain.
+- PAdES-B-LTA depends on archival timestamps and trust anchors accepted by the target validator.
+- Adobe/Reader/browser compatibility should be recorded per release using the manual hash-based tests.
+
+Validated externally in the current project history:
+
+- ITI accepted B-B, B-T and B-LT fixtures generated with a real certificate/TSA.
+- DSS recognized the signatures and reported trust-store-dependent outcomes.
+- B-LTA with FreeTSA may remain indeterminate in validators that do not trust that TSA.
 
 ---
 
 ## Roadmap
 
-- Full PAdES-B-B compliance
-- PAdES-T timestamp support
-- LTV validation
-- OCSP integration
-- CRL integration
-- Multi-signature support
-- Certification signatures
-- Trust chain validation
-- Long-term archival profiles
+- Public release hardening
+- More test fixtures that do not require local secrets
+- Full parser streaming for very large PDFs
+- Broader CI matrix and release automation
+- More framework packages, if demand appears
+- HSM, smartcard, KMS and remote-signing provider examples
 
 ---
 
 ## Important Notes
 
-This project is still under active development and should currently be considered experimental for production environments.
+This project is under active development. Use the public API documented in
+`docs/API-USO.md`; avoid depending on internal namespaces such as `Pdf`,
+`Internal`, `Crypto\Asn1` and CMS builders.
 
-The generated CMS signatures are compatible with OpenSSL verification workflows and are evolving toward broader PAdES interoperability.
+Production use should define certificate storage, password handling, TSA choice,
+trust store, file-size limits and validator targets explicitly. See
+`docs/ESCOPO-INTERNO.md` for supported assumptions and current limitations.
 
 For the current internal scope, supported PDF assumptions, unsupported cases and
 interoperability matrix, see [docs/ESCOPO-INTERNO.md](docs/ESCOPO-INTERNO.md).

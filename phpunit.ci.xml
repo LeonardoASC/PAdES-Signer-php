@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<phpunit bootstrap="tests/bootstrap.php">
+    <testsuites>
+        <testsuite name="CI safe suite">
+            <file>tests/PublicApiTest.php</file>
+            <file>tests/PublicErrorHandlingTest.php</file>
+            <file>tests/PublicTrustStoreTest.php</file>
+            <file>tests/LargeFileHandlingTest.php</file>
+            <file>tests/HashCalculatorTest.php</file>
+            <file>tests/DerTest.php</file>
+            <file>tests/MinimalPdfGeneratorTest.php</file>
+            <file>tests/PdfStructuralParserTest.php</file>
+            <file>tests/PdfModernCompatibilityTest.php</file>
+            <file>tests/PdfSignatureAppearanceTest.php</file>
+            <file>tests/PdfDssObjectBuilderTest.php</file>
+            <file>tests/PdfDssDictionaryTest.php</file>
+            <file>tests/PdfCatalogUpdaterTest.php</file>
+            <file>tests/PdfDocTimeStampSignerTest.php</file>
+            <file>tests/Rfc3161TimestampRequestTest.php</file>
+            <file>tests/Rfc3161TimestampValidatorTest.php</file>
+            <file>tests/TimestampResponseParserTest.php</file>
+            <file>tests/OcspCrlValidationTest.php</file>
+            <file>tests/LtvValidationProfileTest.php</file>
+            <file>tests/LtvValidationReportFactoryTest.php</file>
+            <file>tests/LtvValidationReportJsonSerializerTest.php</file>
+            <file>tests/LtvValidationReportFileWriterTest.php</file>
+            <file>tests/LtvValidationReportExporterTest.php</file>
+        </testsuite>
+    </testsuites>
+</phpunit>
