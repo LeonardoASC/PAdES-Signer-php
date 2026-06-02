@@ -13,7 +13,6 @@ as implementation details.
 - Public validation API for B-B, B-T, B-LT and B-LTA
 - Optional LTV/LTA enrichment helpers
 - Configurable trust store
-- Optional Laravel integration package
 - SigningCertificateV2 support
 - Incremental PDF updates
 - PDF signature dictionary generation
@@ -53,8 +52,8 @@ The current implementation includes:
 composer require nihillabs/pades-core
 ```
 
-Optional Laravel integration lives in `packages/laravel` and can be installed
-as `nihillabs/pades-laravel` when published. See `docs/LARAVEL-INTEGRACAO.md`.
+This package is framework-agnostic and can be used directly in any Composer PHP
+application, including Laravel, Symfony and other frameworks.
 
 ---
 
@@ -66,6 +65,33 @@ as `nihillabs/pades-laravel` when published. See `docs/LARAVEL-INTEGRACAO.md`.
 ---
 
 ## Basic Usage
+
+Framework-agnostic client from configuration:
+
+```php
+use NihilLabs\Pades\PadesClient;
+
+$pades = PadesClient::fromConfig([
+    'certificate_path' => '/secure/certificate.pfx',
+    'certificate_password' => $passwordTypedWhenSigning,
+    'visible_signature' => true,
+    'append_signature_page' => true,
+    'signature_name' => 'Signer Name',
+    'signature_reason' => 'Digital signature',
+    'signature_location' => 'Internal system',
+    'signature_contact_info' => 'signer@example.com',
+]);
+
+$result = $pades->sign(
+    inputPdf: 'document.pdf',
+    outputPdf: 'document-signed.pdf'
+);
+```
+
+The same `PadesClient::fromConfig()` call can receive a Laravel `config('pades')`
+array, a Symfony config array, or any application-level PHP array.
+
+Direct static signing API:
 
 ```php
 use NihilLabs\Pades\Pades;
@@ -186,7 +212,6 @@ Validated externally in the current project history:
 - More test fixtures that do not require local secrets
 - Full parser streaming for very large PDFs
 - Broader CI matrix and release automation
-- More framework packages, if demand appears
 - HSM, smartcard, KMS and remote-signing provider examples
 
 ---

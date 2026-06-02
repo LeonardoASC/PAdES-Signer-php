@@ -276,8 +276,13 @@ Eu diria:
 
 Exemplo falado:
 
-> Em um sistema Laravel, por exemplo, eu consigo rodar `composer require
+> Em qualquer sistema PHP com Composer, eu consigo rodar `composer require
 > nihillabs/pades-core` e usar as classes da biblioteca pelo autoload PSR-4.
+
+> Para facilitar uso em frameworks sem criar pacote especifico para cada um,
+> tambem existe um cliente configuravel por array. Entao uma aplicacao Laravel,
+> Symfony ou PHP puro pode passar sua propria configuracao e chamar a mesma API
+> publica.
 
 Isso mostra produto, nao so codigo:
 
@@ -334,8 +339,8 @@ Eu responderia:
 > Eu melhoraria principalmente a interoperabilidade com validadores externos,
 > como Adobe, DSS europeu e pyHanko. Tambem evoluiria a validacao de longo
 > prazo, com OCSP, CRL e armazenamento de evidencias no PDF. Alem disso, criaria
-> exemplos mais prontos para frameworks como Laravel e adicionaria CI publico
-> para rodar a suite a cada pull request.
+> exemplos de integracao em aplicacoes PHP reais e adicionaria CI publico para
+> rodar a suite a cada pull request.
 
 ## Pontos que eu quero deixar claros na entrevista
 

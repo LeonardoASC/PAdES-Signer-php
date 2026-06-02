@@ -6,6 +6,7 @@ namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Credentials\PfxCredential;
 use NihilLabs\Pades\PadesLtvEnricher;
+use NihilLabs\Pades\PadesClient;
 use NihilLabs\Pades\PadesProfile;
 use NihilLabs\Pades\PadesReport;
 use NihilLabs\Pades\PadesSignatureResult;
@@ -112,6 +113,38 @@ final class PublicApiTest extends TestCase
         $this->assertArrayHasKey(PadesProfile::B_LT, $profiles);
         $this->assertArrayHasKey(PadesProfile::B_LTA, $profiles);
         $this->assertInstanceOf(PadesValidationResult::class, $profiles[PadesProfile::B_B]);
+    }
+
+    public function test_public_client_config_signs_and_reports_without_framework_adapter(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-public-client-input-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-public-client-output-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        (new MinimalPdfGenerator())->generate($input);
+
+        $client = PadesClient::fromConfig([
+            'visible_signature' => true,
+            'append_signature_page' => true,
+            'signature_name' => 'Config Client',
+            'signature_reason' => 'Framework agnostic usage',
+            'signature_location' => 'PHP application',
+            'signature_contact_info' => 'client@example.test',
+        ]);
+
+        $result = $client->sign($input, $output);
+
+        $this->assertSame(PadesProfile::B_B, $result->profile);
+        $this->assertSame('Config Client', $result->signatureName);
+        $this->assertTrue($result->visible);
+        $this->assertTrue($result->signaturePageAppended);
+
+        $report = $client->reportForFile($output);
+
+        $this->assertSame(PadesProfile::B_B, $report['profile']);
+        $this->assertFalse($report['valid']);
     }
 
     public function test_public_ltv_enricher_api_adds_lt_material(): void
