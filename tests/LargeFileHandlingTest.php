@@ -12,6 +12,7 @@ use NihilLabs\Pades\PadesSignatureOptions;
 use NihilLabs\Pades\PadesSigner;
 use NihilLabs\Pades\PadesValidator;
 use NihilLabs\Pades\Pdf\MinimalPdfGenerator;
+use NihilLabs\Pades\Signing\SignatureCredentialInterface;
 use PHPUnit\Framework\TestCase;
 
 final class LargeFileHandlingTest extends TestCase
@@ -31,6 +32,7 @@ final class LargeFileHandlingTest extends TestCase
         (new PadesSigner())->sign(
             inputPdf: $input,
             outputPdf: $output,
+            credential: $this->createMock(SignatureCredentialInterface::class),
             options: new PadesSignatureOptions(maxInputPdfBytes: 10)
         );
     }
@@ -82,6 +84,7 @@ final class LargeFileHandlingTest extends TestCase
         (new PadesSigner())->sign(
             inputPdf: $input,
             outputPdf: $output,
+            credential: $this->createMock(SignatureCredentialInterface::class),
             options: new PadesSignatureOptions(maxInputPdfBytes: 0)
         );
     }

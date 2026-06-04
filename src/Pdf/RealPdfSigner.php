@@ -68,6 +68,12 @@ final readonly class RealPdfSigner
             );
         }
 
+        if ($signatureCredential === null) {
+            throw new InvalidArgumentException(
+                'Informe uma credencial de assinatura real ou certificatePath/certificatePassword.'
+            );
+        }
+
         $isCertificationSignature = $signatureType === 'certification';
 
         if ($isCertificationSignature && (new PdfSignatureFieldInspector())->hasSignatures($content)) {
@@ -271,17 +277,15 @@ final readonly class RealPdfSigner
                 objects: $objects
             );
 
-        if ($signatureCredential !== null) {
-            $updated = $this->applySignature(
-                pdfContent: $updated,
-                signatureCredential: $signatureCredential,
-                timestampClient: $timestampClient,
-                signerProvider: $signerProvider,
-                algorithmPolicy: $algorithmPolicy,
-                reservedBytes: $reservedBytes,
-                includeSigningTime: $includeSigningTime
-            );
-        }
+        $updated = $this->applySignature(
+            pdfContent: $updated,
+            signatureCredential: $signatureCredential,
+            timestampClient: $timestampClient,
+            signerProvider: $signerProvider,
+            algorithmPolicy: $algorithmPolicy,
+            reservedBytes: $reservedBytes,
+            includeSigningTime: $includeSigningTime
+        );
 
 
         $success = file_put_contents($outputPdf, $updated);

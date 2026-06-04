@@ -6,7 +6,6 @@ namespace NihilLabs\Pades\Tests;
 
 use InvalidArgumentException;
 use NihilLabs\Pades\Crypto\Validation\LtvValidationMaterial;
-use NihilLabs\Pades\Exception\CertificateException;
 use NihilLabs\Pades\Exception\InvalidPadesArgumentException;
 use NihilLabs\Pades\Exception\LtvException;
 use NihilLabs\Pades\Exception\PdfReadException;
@@ -18,38 +17,24 @@ use NihilLabs\Pades\PadesSignatureOptions;
 use NihilLabs\Pades\PadesSigner;
 use NihilLabs\Pades\PadesTrustStore;
 use NihilLabs\Pades\PadesValidator;
+use NihilLabs\Pades\Signing\SignatureCredentialInterface;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 final class PublicErrorHandlingTest extends TestCase
 {
-    public function test_static_api_throws_public_invalid_argument_for_missing_metadata(): void
+    public function test_clean_static_api_throws_public_invalid_argument_for_missing_metadata(): void
     {
         $this->expectException(InvalidPadesArgumentException::class);
         $this->expectException(InvalidArgumentException::class);
 
-        Pades::sign(
+        Pades::signBb(
             inputPdf: __DIR__ . '/Fixtures/sample.pdf',
             outputPdf: __DIR__ . '/Output/error-metadata.pdf',
-            certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
-            certificatePassword: 'unused',
+            credential: $this->createMock(SignatureCredentialInterface::class),
             options: new PadesSignatureOptions(
                 signatureName: 'Signer'
             )
-        );
-    }
-
-    public function test_static_api_wraps_pfx_loading_errors(): void
-    {
-        $this->expectException(CertificateException::class);
-        $this->expectException(RuntimeException::class);
-
-        Pades::sign(
-            inputPdf: __DIR__ . '/Fixtures/sample.pdf',
-            outputPdf: __DIR__ . '/Output/error-certificate.pdf',
-            certificatePath: __DIR__ . '/Fixtures/missing.pfx',
-            certificatePassword: 'unused',
-            options: $this->completeOptions()
         );
     }
 
@@ -68,6 +53,7 @@ final class PublicErrorHandlingTest extends TestCase
         (new PadesSigner())->sign(
             inputPdf: $input,
             outputPdf: $output,
+            credential: $this->createMock(SignatureCredentialInterface::class),
             options: $this->completeOptions()
         );
     }

@@ -15,6 +15,7 @@ use NihilLabs\Pades\PadesSigner;
 use NihilLabs\Pades\PadesValidationResult;
 use NihilLabs\Pades\PadesValidator;
 use NihilLabs\Pades\Crypto\Validation\LtvValidationMaterial;
+use NihilLabs\Pades\Exception\InvalidPadesArgumentException;
 use NihilLabs\Pades\Pdf\MinimalPdfGenerator;
 use PHPUnit\Framework\TestCase;
 
@@ -33,10 +34,15 @@ final class PublicApiTest extends TestCase
         $result = (new PadesSigner())->sign(
             inputPdf: $input,
             outputPdf: $output,
+            credential: PfxCredential::fromFile(
+                path: __DIR__ . '/Fixtures/certificate.pfx',
+                password: $this->certificatePassword()
+            ),
             options: new PadesSignatureOptions(
                 visibleSignature: true,
                 appendSignaturePage: true,
-                signatureName: 'Public Result'
+                signatureName: 'Public Result',
+                signatureReason: 'Public result test'
             )
         );
 
@@ -50,7 +56,7 @@ final class PublicApiTest extends TestCase
         $this->assertTrue($result->signaturePageAppended);
         $this->assertFalse($result->timestamped);
         $this->assertSame('Public Result', $result->signatureName);
-        $this->assertNotSame([], $result->warnings);
+        $this->assertSame([], $result->warnings);
         $this->assertSame($result->sha256, $result->toArray()['sha256']);
     }
 
@@ -126,6 +132,8 @@ final class PublicApiTest extends TestCase
         (new MinimalPdfGenerator())->generate($input);
 
         $client = PadesClient::fromConfig([
+            'certificate_path' => __DIR__ . '/Fixtures/certificate.pfx',
+            'certificate_password' => $this->certificatePassword(),
             'visible_signature' => true,
             'append_signature_page' => true,
             'signature_name' => 'Config Client',
@@ -144,7 +152,28 @@ final class PublicApiTest extends TestCase
         $report = $client->reportForFile($output);
 
         $this->assertSame(PadesProfile::B_B, $report['profile']);
-        $this->assertFalse($report['valid']);
+        $this->assertTrue($report['valid'], implode("\n", $report['messages'] ?? []));
+    }
+
+    public function test_public_client_rejects_signing_without_credential(): void
+    {
+        $input = tempnam(sys_get_temp_dir(), 'pades-public-client-no-credential-input-');
+        $output = tempnam(sys_get_temp_dir(), 'pades-public-client-no-credential-output-');
+
+        $this->assertIsString($input);
+        $this->assertIsString($output);
+
+        (new MinimalPdfGenerator())->generate($input);
+
+        $client = PadesClient::fromConfig([
+            'signature_name' => 'Missing Credential',
+            'signature_reason' => 'Should fail',
+        ]);
+
+        $this->expectException(InvalidPadesArgumentException::class);
+        $this->expectExceptionMessage('Informe uma credencial de assinatura real');
+
+        $client->sign($input, $output);
     }
 
     public function test_public_ltv_enricher_api_adds_lt_material(): void

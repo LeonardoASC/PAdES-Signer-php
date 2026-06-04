@@ -43,6 +43,16 @@ final class PdfModernCompatibilityTest extends TestCase
         $this->assertSame(strpos($pdf, '1 0 obj'), $structure->xrefTables[0][1]['offset']);
     }
 
+    public function test_it_supports_flate_decoded_xref_streams_with_png_predictor(): void
+    {
+        $pdf = $this->buildXrefStreamPdf(filter: 'FlateDecode', pngPredictor: true);
+
+        $structure = (new PdfStructureValidator())->validate($pdf);
+
+        $this->assertSame('1 0 R', $structure->latestTrailer()->getReference('Root'));
+        $this->assertSame(strpos($pdf, '1 0 obj'), $structure->xrefTables[0][1]['offset']);
+    }
+
     public function test_it_supports_object_streams(): void
     {
         $pdf = $this->buildObjectStreamPdf();
@@ -68,7 +78,12 @@ final class PdfModernCompatibilityTest extends TestCase
         $output = tempnam(sys_get_temp_dir(), 'pades-no-acroform-');
 
         $this->assertIsString($output);
-        (new RealPdfSigner())->sign($input, $output);
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
+            certificatePassword: $this->certificatePassword()
+        );
 
         $signed = file_get_contents($output);
 
@@ -77,7 +92,11 @@ final class PdfModernCompatibilityTest extends TestCase
         $this->assertStringContainsString('/Fields [', $signed);
     }
 
-    private function buildXrefStreamPdf(bool $linearized = false, ?string $filter = null): string
+    private function buildXrefStreamPdf(
+        bool $linearized = false,
+        ?string $filter = null,
+        bool $pngPredictor = false
+    ): string
     {
         $pdf = "%PDF-1.7\n";
         $offset1 = strlen($pdf);
@@ -95,13 +114,18 @@ final class PdfModernCompatibilityTest extends TestCase
             . $this->xrefEntry(1, $offset2, 0)
             . $this->xrefEntry(1, $offset3, 0);
 
-        $stream = $filter === 'ASCIIHexDecode'
-            ? strtoupper(bin2hex($entries)) . '>'
-            : $entries;
+        $stream = match (true) {
+            $filter === 'ASCIIHexDecode' => strtoupper(bin2hex($entries)) . '>',
+            $filter === 'FlateDecode' && $pngPredictor => gzcompress($this->pngPredictorRows($entries, 7)),
+            default => $entries,
+        };
         $filterEntry = $filter !== null ? " /Filter /{$filter}" : '';
+        $decodeParms = $pngPredictor
+            ? ' /DecodeParms << /Predictor 12 /Columns 7 >>'
+            : '';
 
         $pdf .= "3 0 obj\n"
-            . "<< /Type /XRef /Size 4 /Root 1 0 R /W [1 4 2]{$filterEntry} /Length " . strlen($stream) . " >>\n"
+            . "<< /Type /XRef /Size 4 /Root 1 0 R /W [1 4 2]{$filterEntry}{$decodeParms} /Length " . strlen($stream) . " >>\n"
             . "stream\n"
             . $stream . "\n"
             . "endstream\n"
@@ -186,5 +210,27 @@ final class PdfModernCompatibilityTest extends TestCase
         return chr($type)
             . pack('N', $field2)
             . pack('n', $field3);
+    }
+
+    private function pngPredictorRows(string $entries, int $rowLength): string
+    {
+        $encoded = '';
+
+        for ($offset = 0; $offset < strlen($entries); $offset += $rowLength) {
+            $encoded .= "\0" . substr($entries, $offset, $rowLength);
+        }
+
+        return $encoded;
+    }
+
+    private function certificatePassword(): string
+    {
+        $password = getenv('PADES_INTEROP_PFX_PASSWORD');
+
+        if (! is_string($password) || $password === '') {
+            $this->markTestSkipped('Configure PADES_INTEROP_PFX_PASSWORD para rodar teste de assinatura com certificate.pfx local.');
+        }
+
+        return $password;
     }
 }

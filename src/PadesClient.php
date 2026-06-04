@@ -43,10 +43,18 @@ final readonly class PadesClient
         ?SignatureCredentialInterface $credential = null,
         ?PadesSignatureOptions $options = null
     ): PadesSignatureResult {
+        $resolvedCredential = $credential ?? $this->credential;
+
+        if ($resolvedCredential === null) {
+            throw new InvalidPadesArgumentException(
+                'Informe uma credencial de assinatura real antes de assinar.'
+            );
+        }
+
         return $this->signer->sign(
             inputPdf: $inputPdf,
             outputPdf: $outputPdf,
-            credential: $credential ?? $this->credential,
+            credential: $resolvedCredential,
             options: $options ?? $this->options
         );
     }

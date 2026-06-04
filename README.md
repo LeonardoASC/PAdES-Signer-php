@@ -66,42 +66,44 @@ application, including Laravel, Symfony and other frameworks.
 
 ## Basic Usage
 
-Framework-agnostic client from configuration:
+PAdES-B-B signature:
 
 ```php
-use NihilLabs\Pades\PadesClient;
-
-$pades = PadesClient::fromConfig([
-    'certificate_path' => '/secure/certificate.pfx',
-    'certificate_password' => $passwordTypedWhenSigning,
-    'visible_signature' => true,
-    'append_signature_page' => true,
-    'signature_name' => 'Signer Name',
-    'signature_reason' => 'Digital signature',
-    'signature_location' => 'Internal system',
-    'signature_contact_info' => 'signer@example.com',
-]);
-
-$result = $pades->sign(
-    inputPdf: 'document.pdf',
-    outputPdf: 'document-signed.pdf'
-);
-```
-
-The same `PadesClient::fromConfig()` call can receive a Laravel `config('pades')`
-array, a Symfony config array, or any application-level PHP array.
-
-Direct static signing API:
-
-```php
+use NihilLabs\Pades\Credentials\PfxCredential;
 use NihilLabs\Pades\Pades;
 use NihilLabs\Pades\PadesSignatureOptions;
 
-Pades::sign(
+$credential = PfxCredential::fromFile(
+    path: '/secure/certificate.pfx',
+    password: $passwordTypedWhenSigning
+);
+
+$result = Pades::signBb(
     inputPdf: 'document.pdf',
     outputPdf: 'document-signed.pdf',
-    certificatePath: 'certificate.pfx',
-    certificatePassword: getenv('PFX_PASSWORD'),
+    credential: $credential,
+    options: new PadesSignatureOptions(
+        signatureName: 'Signer Name',
+        signatureReason: 'Digital signature',
+        signatureLocation: 'Internal system',
+        signatureContactInfo: 'signer@example.com'
+    )
+);
+```
+
+PAdES-B-T signature with TSA:
+
+```php
+use NihilLabs\Pades\Credentials\PfxCredential;
+use NihilLabs\Pades\Crypto\Timestamp\HttpTimestampClient;
+use NihilLabs\Pades\Pades;
+use NihilLabs\Pades\PadesSignatureOptions;
+
+$result = Pades::signBt(
+    inputPdf: 'document.pdf',
+    outputPdf: 'document-signed.pdf',
+    credential: PfxCredential::fromFile('/secure/certificate.pfx', $passwordTypedWhenSigning),
+    timestampProvider: new HttpTimestampClient('https://tsa.example.com/tsr'),
     options: new PadesSignatureOptions(
         signatureName: 'Signer Name',
         signatureReason: 'Digital signature',
@@ -117,6 +119,7 @@ Certificate imported by the user and stored outside the filesystem:
 use NihilLabs\Pades\Certificate\PfxCertificateImporter;
 use NihilLabs\Pades\Pades;
 use NihilLabs\Pades\PadesSignatureOptions;
+use NihilLabs\Pades\Signing\PfxSignatureCredential;
 
 $uploadedPfxContents = file_get_contents($_FILES['certificate']['tmp_name']);
 
@@ -128,34 +131,15 @@ $metadata = (new PfxCertificateImporter())->inspectContents(
 // Store $uploadedPfxContents and selected $metadata fields.
 // Do not store the certificate password.
 
-Pades::signWithPfxContents(
-    inputPdf: 'document.pdf',
-    outputPdf: 'document-signed.pdf',
-    certificateContents: $storedPfxContents,
-    certificatePassword: $passwordTypedWhenSigning,
-    options: new PadesSignatureOptions(
-        signatureName: $signerName,
-        signatureReason: 'Digital signature',
-        signatureLocation: 'Internal system',
-        signatureContactInfo: $signerEmail
-    )
+$credential = PfxSignatureCredential::fromContents(
+    contents: $storedPfxContents,
+    password: $passwordTypedWhenSigning
 );
-```
 
-Visible signature with custom placement:
-
-```php
-use NihilLabs\Pades\PadesSigner;
-use NihilLabs\Pades\PadesSignatureOptions;
-use NihilLabs\Pades\Signing\PfxSignatureCredential;
-
-(new PadesSigner())->sign(
+Pades::signBb(
     inputPdf: 'document.pdf',
     outputPdf: 'document-signed.pdf',
-    credential: new PfxSignatureCredential(
-        'certificate.pfx',
-        getenv('PFX_PASSWORD')
-    ),
+    credential: $credential,
     options: new PadesSignatureOptions(
         visibleSignature: true,
         signatureRect: [48, 48, 547, 96],

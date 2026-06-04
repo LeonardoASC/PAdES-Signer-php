@@ -304,6 +304,12 @@ final readonly class PdfStructuralParser
                 throw new RuntimeException('XRef stream com entrada vazia.');
             }
 
+            $stream = $this->decodeXrefStreamPredictor(
+                stream: $stream,
+                dictionary: $this->streamDictionary($object->body),
+                entryLength: $entryLength
+            );
+
             $cursor = 0;
             $table = [];
 
@@ -383,6 +389,178 @@ final readonly class PdfStructuralParser
         }
 
         return [$fields[0] ?? 1, $fields[1] ?? 0, $fields[2] ?? 0];
+    }
+
+    private function decodeXrefStreamPredictor(
+        string $stream,
+        string $dictionary,
+        int $entryLength
+    ): string {
+        $decodeParms = (new PdfDictionaryReader())->getValue($dictionary, 'DecodeParms');
+
+        if ($decodeParms === null) {
+            return $stream;
+        }
+
+        $predictor = (new PdfDictionaryReader())->getInteger($decodeParms, 'Predictor') ?? 1;
+
+        if ($predictor === 1) {
+            return $stream;
+        }
+
+        $columns = (new PdfDictionaryReader())->getInteger($decodeParms, 'Columns')
+            ?? $entryLength;
+        $colors = (new PdfDictionaryReader())->getInteger($decodeParms, 'Colors') ?? 1;
+        $bitsPerComponent = (new PdfDictionaryReader())->getInteger($decodeParms, 'BitsPerComponent') ?? 8;
+
+        if ($columns <= 0) {
+            throw new RuntimeException('DecodeParms de xref stream com /Columns invalido.');
+        }
+
+        if ($predictor === 2) {
+            return $this->decodeTiffPredictor($stream, $columns, $colors, $bitsPerComponent);
+        }
+
+        if ($predictor < 10 || $predictor > 15) {
+            throw new RuntimeException("DecodeParms de xref stream com /Predictor nao suportado: {$predictor}.");
+        }
+
+        return $this->decodePngPredictor($stream, $columns, $colors, $bitsPerComponent);
+    }
+
+    private function decodeTiffPredictor(
+        string $stream,
+        int $columns,
+        int $colors,
+        int $bitsPerComponent
+    ): string {
+        $rowLength = $this->predictorRowLength($columns, $colors, $bitsPerComponent);
+        $bytesPerPixel = $this->predictorBytesPerPixel($colors, $bitsPerComponent);
+        $decoded = '';
+
+        for ($offset = 0; $offset < strlen($stream); $offset += $rowLength) {
+            $row = substr($stream, $offset, $rowLength);
+
+            if (strlen($row) !== $rowLength) {
+                throw new RuntimeException('XRef stream com TIFF predictor truncado.');
+            }
+
+            $decoded .= $this->decodePngSubRow($row, $bytesPerPixel);
+        }
+
+        return $decoded;
+    }
+
+    private function decodePngPredictor(
+        string $stream,
+        int $columns,
+        int $colors,
+        int $bitsPerComponent
+    ): string {
+        $rowLength = $this->predictorRowLength($columns, $colors, $bitsPerComponent);
+        $bytesPerPixel = $this->predictorBytesPerPixel($colors, $bitsPerComponent);
+        $decoded = '';
+        $previous = str_repeat("\0", $rowLength);
+        $encodedRowLength = $rowLength + 1;
+
+        for ($offset = 0; $offset < strlen($stream); $offset += $encodedRowLength) {
+            $encoded = substr($stream, $offset, $encodedRowLength);
+
+            if (strlen($encoded) !== $encodedRowLength) {
+                throw new RuntimeException('XRef stream com PNG predictor truncado.');
+            }
+
+            $filter = ord($encoded[0]);
+            $row = substr($encoded, 1);
+
+            $decodedRow = match ($filter) {
+                0 => $row,
+                1 => $this->decodePngSubRow($row, $bytesPerPixel),
+                2 => $this->decodePngUpRow($row, $previous),
+                3 => $this->decodePngAverageRow($row, $previous, $bytesPerPixel),
+                4 => $this->decodePngPaethRow($row, $previous, $bytesPerPixel),
+                default => throw new RuntimeException("Filtro PNG predictor invalido em xref stream: {$filter}."),
+            };
+
+            $decoded .= $decodedRow;
+            $previous = $decodedRow;
+        }
+
+        return $decoded;
+    }
+
+    private function decodePngSubRow(string $row, int $bytesPerPixel): string
+    {
+        $decoded = '';
+
+        for ($i = 0; $i < strlen($row); $i++) {
+            $left = $i >= $bytesPerPixel ? ord($decoded[$i - $bytesPerPixel]) : 0;
+            $decoded .= chr((ord($row[$i]) + $left) & 0xff);
+        }
+
+        return $decoded;
+    }
+
+    private function decodePngUpRow(string $row, string $previous): string
+    {
+        $decoded = '';
+
+        for ($i = 0; $i < strlen($row); $i++) {
+            $decoded .= chr((ord($row[$i]) + ord($previous[$i])) & 0xff);
+        }
+
+        return $decoded;
+    }
+
+    private function decodePngAverageRow(string $row, string $previous, int $bytesPerPixel): string
+    {
+        $decoded = '';
+
+        for ($i = 0; $i < strlen($row); $i++) {
+            $left = $i >= $bytesPerPixel ? ord($decoded[$i - $bytesPerPixel]) : 0;
+            $up = ord($previous[$i]);
+            $decoded .= chr((ord($row[$i]) + intdiv($left + $up, 2)) & 0xff);
+        }
+
+        return $decoded;
+    }
+
+    private function decodePngPaethRow(string $row, string $previous, int $bytesPerPixel): string
+    {
+        $decoded = '';
+
+        for ($i = 0; $i < strlen($row); $i++) {
+            $left = $i >= $bytesPerPixel ? ord($decoded[$i - $bytesPerPixel]) : 0;
+            $up = ord($previous[$i]);
+            $upperLeft = $i >= $bytesPerPixel ? ord($previous[$i - $bytesPerPixel]) : 0;
+            $decoded .= chr((ord($row[$i]) + $this->paethPredictor($left, $up, $upperLeft)) & 0xff);
+        }
+
+        return $decoded;
+    }
+
+    private function paethPredictor(int $left, int $up, int $upperLeft): int
+    {
+        $estimate = $left + $up - $upperLeft;
+        $leftDistance = abs($estimate - $left);
+        $upDistance = abs($estimate - $up);
+        $upperLeftDistance = abs($estimate - $upperLeft);
+
+        if ($leftDistance <= $upDistance && $leftDistance <= $upperLeftDistance) {
+            return $left;
+        }
+
+        return $upDistance <= $upperLeftDistance ? $up : $upperLeft;
+    }
+
+    private function predictorRowLength(int $columns, int $colors, int $bitsPerComponent): int
+    {
+        return (int) ceil(($columns * $colors * $bitsPerComponent) / 8);
+    }
+
+    private function predictorBytesPerPixel(int $colors, int $bitsPerComponent): int
+    {
+        return max(1, (int) ceil(($colors * $bitsPerComponent) / 8));
     }
 
     private function decodedStream(PdfIndirectObject $object): ?string

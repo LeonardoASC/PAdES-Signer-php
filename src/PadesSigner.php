@@ -24,13 +24,13 @@ final readonly class PadesSigner
     public function sign(
         string $inputPdf,
         string $outputPdf,
-        ?SignatureCredentialInterface $credential = null,
+        SignatureCredentialInterface $credential,
         ?PadesSignatureOptions $options = null
     ): PadesSignatureResult {
         $options ??= new PadesSignatureOptions();
         $this->fileGuard->assertReadable($inputPdf, $options->maxInputPdfBytes);
 
-        if ($credential !== null && $options->trustValidator !== null) {
+        if ($options->trustValidator !== null) {
             $trust = $options->trustValidator->validateCredential($credential);
 
             if (! $trust->trusted) {
@@ -99,9 +99,7 @@ final readonly class PadesSigner
             signaturePageAppended: $options->appendSignaturePage,
             signatureName: $options->signatureName,
             signatureFieldName: $options->signatureFieldName,
-            warnings: $credential === null
-                ? ['Assinatura gerada sem credencial real; use apenas para testes estruturais.']
-                : []
+            warnings: []
         );
     }
 }
