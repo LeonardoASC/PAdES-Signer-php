@@ -7,6 +7,8 @@ namespace NihilLabs\Pades\Tests;
 use NihilLabs\Pades\Pdf\MinimalPdfGenerator;
 use NihilLabs\Pades\Pdf\RealPdfSigner;
 use NihilLabs\Pades\Crypto\Algorithm\SignatureAlgorithmPolicy;
+use NihilLabs\Pades\Tests\Support\TestSignatureCredential;
+use NihilLabs\Pades\Tests\Support\TestSignerProvider;
 use PHPUnit\Framework\TestCase;
 
 final class RealPdfSignerTest extends TestCase
@@ -22,7 +24,7 @@ final class RealPdfSignerTest extends TestCase
 
         (new MinimalPdfGenerator())->generate($input);
 
-        (new RealPdfSigner())->sign($input, $output);
+        $this->signPdf($input, $output);
 
         $this->assertFileExists($output);
 
@@ -37,7 +39,7 @@ final class RealPdfSignerTest extends TestCase
         $this->assertStringContainsString('/Filter /Adobe.PPKLite', $content);
         $this->assertStringContainsString('/SubFilter /ETSI.CAdES.detached', $content);
         $this->assertStringContainsString('/Contents <', $content);
-        $this->assertStringContainsString('/ByteRange [**********', $content);
+        $this->assertStringContainsString('/ByteRange [0 ', $content);
         $this->assertStringContainsString('/Extensions <<', $content);
         $this->assertStringContainsString('/ESIC <<', $content);
         $this->assertStringNotContainsString('/Prop_Build', $content);
@@ -54,7 +56,7 @@ final class RealPdfSignerTest extends TestCase
 
         (new MinimalPdfGenerator())->generate($input);
 
-        (new RealPdfSigner())->sign($input, $output);
+        $this->signPdf($input, $output);
 
         $content = file_get_contents($output);
 
@@ -84,11 +86,11 @@ final class RealPdfSignerTest extends TestCase
 
         (new MinimalPdfGenerator())->generate($input);
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
-            certificatePassword: '123456'
+            certificatePassword: $this->certificatePassword()
         );
 
         $this->assertFileExists($output);
@@ -130,7 +132,7 @@ final class RealPdfSignerTest extends TestCase
 
         (new MinimalPdfGenerator())->generate($input);
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             visibleSignature: true,
@@ -177,7 +179,7 @@ final class RealPdfSignerTest extends TestCase
             3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
         ]));
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             visibleSignature: true,
@@ -211,7 +213,7 @@ final class RealPdfSignerTest extends TestCase
             7 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
         ]));
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             visibleSignature: true,
@@ -245,7 +247,7 @@ final class RealPdfSignerTest extends TestCase
             20 => "<< /ProcSet [/PDF] >>",
         ]));
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             visibleSignature: true,
@@ -276,7 +278,7 @@ final class RealPdfSignerTest extends TestCase
             8 => "[3 0 R]",
         ]));
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             visibleSignature: true,
@@ -304,7 +306,7 @@ final class RealPdfSignerTest extends TestCase
             3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
         ]));
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             visibleSignature: true,
@@ -338,9 +340,9 @@ final class RealPdfSignerTest extends TestCase
             3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
         ]));
 
-        (new RealPdfSigner())->sign($input, $first);
+        $this->signPdf($input, $first);
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $first,
             outputPdf: $second,
             visibleSignature: true,
@@ -370,7 +372,7 @@ final class RealPdfSignerTest extends TestCase
             5 => "<< /Fields [] /SigFlags 3 >>",
         ]));
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             visibleSignature: true,
@@ -394,7 +396,7 @@ final class RealPdfSignerTest extends TestCase
 
         file_put_contents($input, $this->buildPdfWithEmptySignatureField());
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             signatureFieldName: 'Approval'
@@ -419,7 +421,7 @@ final class RealPdfSignerTest extends TestCase
 
         file_put_contents($input, $this->buildPdfWithHierarchicalSeededSignatureField());
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             signatureFieldName: 'Section.Approval',
@@ -451,7 +453,7 @@ final class RealPdfSignerTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Seed Value Dictionary nao permite o motivo de assinatura configurado.');
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             signatureFieldName: 'Section.Approval',
@@ -473,7 +475,7 @@ final class RealPdfSignerTest extends TestCase
             3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
         ]));
 
-        (new RealPdfSigner())->sign($input, $output);
+        $this->signPdf($input, $output);
 
         $content = file_get_contents($output);
 
@@ -497,7 +499,7 @@ final class RealPdfSignerTest extends TestCase
             3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
         ]));
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             signatureType: 'certification',
@@ -529,7 +531,7 @@ final class RealPdfSignerTest extends TestCase
             3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
         ]));
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             lockedFieldNames: ['Amount', 'Approval'],
@@ -558,11 +560,11 @@ final class RealPdfSignerTest extends TestCase
             3 => "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
         ]));
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
-            certificatePassword: '123456',
+            certificatePassword: $this->certificatePassword(),
             algorithmPolicy: new SignatureAlgorithmPolicy(
                 hashAlgorithm: SignatureAlgorithmPolicy::HASH_SHA512
             )
@@ -585,13 +587,12 @@ final class RealPdfSignerTest extends TestCase
         (new \NihilLabs\Pades\Pdf\MinimalPdfGenerator())
             ->generate($input);
 
-        (new \NihilLabs\Pades\Pdf\RealPdfSigner())
-            ->sign(
-                inputPdf: $input,
-                outputPdf: $output,
-                certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
-                certificatePassword: '123456'
-            );
+        $this->signPdf(
+            inputPdf: $input,
+            outputPdf: $output,
+            certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
+            certificatePassword: $this->certificatePassword()
+        );
 
         $pdf = file_get_contents($output);
 
@@ -623,7 +624,7 @@ final class RealPdfSignerTest extends TestCase
             3 => '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>',
         ]));
 
-        (new RealPdfSigner())->sign(
+        $this->signPdf(
             inputPdf: $input,
             outputPdf: $output,
             visibleSignature: true,
@@ -679,7 +680,7 @@ final class RealPdfSignerTest extends TestCase
                 3 => $case['sourcePage'],
             ]));
 
-            (new RealPdfSigner())->sign(
+            $this->signPdf(
                 inputPdf: $input,
                 outputPdf: $output,
                 visibleSignature: true,
@@ -697,6 +698,32 @@ final class RealPdfSignerTest extends TestCase
                 $this->assertStringContainsString($case['expectedSourceMarker'], $content);
             }
         }
+    }
+
+    private function signPdf(mixed ...$arguments): void
+    {
+        if (
+            ! array_key_exists('signatureCredential', $arguments)
+            && ! array_key_exists('certificatePath', $arguments)
+        ) {
+            $arguments['signatureCredential'] = new TestSignatureCredential();
+            $arguments['signerProvider'] = new TestSignerProvider();
+        }
+
+        (new RealPdfSigner())->sign(...$arguments);
+    }
+
+    private function certificatePassword(): string
+    {
+        $password = getenv('PADES_INTEROP_PFX_PASSWORD');
+
+        if (! is_string($password) || $password === '') {
+            self::markTestSkipped(
+                'Configure PADES_INTEROP_PFX_PASSWORD para rodar testes com certificate.pfx local.'
+            );
+        }
+
+        return $password;
     }
 
     private function buildPdfWithEmptySignatureField(): string

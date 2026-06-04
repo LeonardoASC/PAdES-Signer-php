@@ -9,6 +9,8 @@ use NihilLabs\Pades\Pdf\PdfIncrementalUpdateValidator;
 use NihilLabs\Pades\Pdf\PdfSignatureFieldInspector;
 use NihilLabs\Pades\Pdf\PdfStructuralParser;
 use NihilLabs\Pades\Pdf\RealPdfSigner;
+use NihilLabs\Pades\Tests\Support\TestSignatureCredential;
+use NihilLabs\Pades\Tests\Support\TestSignerProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -111,11 +113,21 @@ final class IncrementalUpdateRobustnessTest extends TestCase
         $this->assertIsString($second);
 
         $signer = new RealPdfSigner();
-        $signer->sign(__DIR__ . '/Fixtures/sample.pdf', $first);
+        $signer->sign(
+            inputPdf: __DIR__ . '/Fixtures/sample.pdf',
+            outputPdf: $first,
+            signatureCredential: new TestSignatureCredential(),
+            signerProvider: new TestSignerProvider()
+        );
         $firstContent = file_get_contents($first);
         $this->assertNotFalse($firstContent);
 
-        $signer->sign($first, $second);
+        $signer->sign(
+            inputPdf: $first,
+            outputPdf: $second,
+            signatureCredential: new TestSignatureCredential(),
+            signerProvider: new TestSignerProvider()
+        );
         $secondContent = file_get_contents($second);
         $this->assertNotFalse($secondContent);
         $this->assertStringStartsWith($firstContent, $secondContent);

@@ -50,9 +50,9 @@ final readonly class SignedPdfFixture
         (new RealPdfSigner())->sign(
             inputPdf: $input,
             outputPdf: $output,
-            certificatePath: self::certificatePath(),
-            certificatePassword: '123456',
-            timestampClient: $timestampClient
+            timestampClient: $timestampClient,
+            signatureCredential: new TestSignatureCredential(),
+            signerProvider: new TestSignerProvider()
         );
 
         return $output;
@@ -89,11 +89,6 @@ final readonly class SignedPdfFixture
     public static function outputPath(string $file): string
     {
         return dirname(__DIR__) . '/Output/' . $file;
-    }
-
-    private static function certificatePath(): string
-    {
-        return dirname(__DIR__) . '/Fixtures/certificate.pfx';
     }
 
     private static function ensureOutputDirectory(): void

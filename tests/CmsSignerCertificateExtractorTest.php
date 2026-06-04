@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace NihilLabs\Pades\Tests;
 
 use NihilLabs\Pades\Internal\Crypto\CmsSignerCertificateExtractor;
+use NihilLabs\Pades\Pdf\MinimalPdfGenerator;
 use NihilLabs\Pades\Pdf\PdfSignatureExtractor;
+use NihilLabs\Pades\Pdf\RealPdfSigner;
 use NihilLabs\Pades\Tests\Support\SignedPdfFixture;
 use PHPUnit\Framework\TestCase;
 
@@ -13,7 +15,7 @@ final class CmsSignerCertificateExtractorTest extends TestCase
 {
     public function test_it_identifies_signer_certificate_from_signer_info(): void
     {
-        $pdf = SignedPdfFixture::signedPdfContent('cms-signer-certificate');
+        $pdf = $this->realSignedPdfContent('cms-signer-certificate');
         $cms = (new PdfSignatureExtractor())->extractBinarySignatureWithoutPadding($pdf);
 
         $info = (new CmsSignerCertificateExtractor())->extract($cms);
@@ -22,5 +24,25 @@ final class CmsSignerCertificateExtractorTest extends TestCase
         $this->assertNotNull($info->certificateDer);
         $this->assertNotNull($info->certificatePem);
         $this->assertStringContainsString('-----BEGIN CERTIFICATE-----', $info->certificatePem);
+    }
+
+    private function realSignedPdfContent(string $name): string
+    {
+        $input = SignedPdfFixture::outputPath("{$name}-input.pdf");
+        $output = SignedPdfFixture::outputPath("{$name}-signed.pdf");
+
+        (new MinimalPdfGenerator())->generate($input);
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
+            certificatePassword: '123456'
+        );
+
+        $pdf = file_get_contents($output);
+        $this->assertNotFalse($pdf);
+
+        return $pdf;
     }
 }

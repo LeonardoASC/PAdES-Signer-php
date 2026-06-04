@@ -8,9 +8,11 @@ use NihilLabs\Pades\Internal\Crypto\PadesCmsVerifier;
 use NihilLabs\Pades\Crypto\Validation\LtvValidationMaterial;
 use NihilLabs\Pades\Pdf\IncrementalPdfWriter;
 use NihilLabs\Pades\Pdf\Dss\PdfDssInspector;
+use NihilLabs\Pades\Pdf\MinimalPdfGenerator;
 use NihilLabs\Pades\Pdf\PdfByteRangeValidator;
 use NihilLabs\Pades\Pdf\PdfCatalogInspector;
 use NihilLabs\Pades\Pdf\PdfLtvEnricher;
+use NihilLabs\Pades\Pdf\RealPdfSigner;
 use NihilLabs\Pades\Tests\Support\SignedPdfFixture;
 use PHPUnit\Framework\TestCase;
 
@@ -18,7 +20,7 @@ final class PdfLtvEnricherTest extends TestCase
 {
     public function test_it_adds_dss_vri_incrementally_without_breaking_openssl_verification(): void
     {
-        $signedPdf = SignedPdfFixture::signedPdfContent(
+        $signedPdf = $this->realSignedPdfContent(
             'pdf-ltv-enricher'
         );
 
@@ -103,5 +105,25 @@ final class PdfLtvEnricherTest extends TestCase
 
         $this->assertTrue($inspection['has_dss_dictionary']);
         $this->assertTrue($inspection['has_vri_dictionary']);
+    }
+
+    private function realSignedPdfContent(string $name): string
+    {
+        $input = SignedPdfFixture::outputPath("{$name}-input.pdf");
+        $output = SignedPdfFixture::outputPath("{$name}-signed.pdf");
+
+        (new MinimalPdfGenerator())->generate($input);
+
+        (new RealPdfSigner())->sign(
+            inputPdf: $input,
+            outputPdf: $output,
+            certificatePath: __DIR__ . '/Fixtures/certificate.pfx',
+            certificatePassword: '123456'
+        );
+
+        $pdf = file_get_contents($output);
+        $this->assertNotFalse($pdf);
+
+        return $pdf;
     }
 }
