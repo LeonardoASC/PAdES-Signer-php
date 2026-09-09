@@ -165,7 +165,7 @@ CI-safe suite without local certificate secrets:
 vendor/bin/phpunit -c phpunit.ci.xml --display-skipped --display-warnings
 ```
 
-Interoperability setup is documented in `docs/CI-INTEROPERABILIDADE.md`.
+Internal interoperability setup documentation is available upon request.
 
 ---
 
@@ -202,22 +202,14 @@ Validated externally in the current project history:
 
 ## Important Notes
 
-This project is under active development. Use the public API documented in
-`docs/API-USO.md`; avoid depending on internal namespaces such as `Pdf`,
+This project is under active development. Use the public API shown in this
+README; avoid depending on internal namespaces such as `Pdf`,
 `Internal`, `Crypto\Asn1` and CMS builders.
 
 Production use should define certificate storage, password handling, TSA choice,
-trust store, file-size limits and validator targets explicitly. See
-`docs/ESCOPO-INTERNO.md` for supported assumptions and current limitations.
-
-For the current internal scope, supported PDF assumptions, unsupported cases and
-interoperability matrix, see [docs/ESCOPO-INTERNO.md](docs/ESCOPO-INTERNO.md).
-For repository hygiene rules around fixtures, generated files and local signing
-material, see [docs/HIGIENE-REPOSITORIO.md](docs/HIGIENE-REPOSITORIO.md).
-For minimum usage examples with PFX/P12, PEM, visible signatures and Git Bash
-commands, see [docs/USO-MINIMO.md](docs/USO-MINIMO.md).
-For public API usage, parameters, return values and integration guidance, see
-[docs/API-USO.md](docs/API-USO.md).
+trust store, file-size limits and validator targets explicitly. Internal
+documentation covering project scope, interoperability, repository hygiene and
+additional usage guidance is available upon request.
 
 ---
 
